@@ -1,0 +1,12 @@
+0	1	mikroCPIC1618.exe -MSF -DBG -pP18F4550 -DL -O11111114 -fo8 -N"D:\keanu\Documents\GitHub\controller\PIC4550_ESP8266\PIC4550_ESP8266.mcppi" -SP"D:\Program Files\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"D:\Program Files\Mikroelektronika\mikroC PRO for PIC\uses\P18\" -SP"D:\keanu\Documents\GitHub\controller\PIC4550_ESP8266\" -IP"D:\Program Files\Mikroelektronika\mikroC PRO for PIC\uses\P18\" "main.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_UART_c67.mcl"	 
+hint: 0	1139	Available RAM: 2027 [bytes], Available ROM: 32768 [bytes]	 
+diagnostics: 0	122	Compilation Started	main.c
+warning: 16	1509	Generated baud rate is 9615 bps (error = 0.16 percent)	main.c
+diagnostics: 35	123	Compiled Successfully	main.c
+diagnostics: 0	127	All files Compiled in 78 ms	 
+hint: 0	1144	Used RAM (bytes): 83 (4%)  Free RAM (bytes): 1944 (96%)	Used RAM (bytes): 83 (4%)  Free RAM (bytes): 1944 (96%)
+hint: 0	1144	Used ROM (bytes): 418 (1%)  Free ROM (bytes): 32350 (99%)	Used ROM (bytes): 418 (1%)  Free ROM (bytes): 32350 (99%)
+diagnostics: 0	125	Project Linked Successfully	PIC4550_ESP8266.mcppi
+diagnostics: 0	128	Linked in 16 ms	 
+diagnostics: 0	129	Project 'PIC4550_ESP8266.mcppi' completed: 125 ms	 
+diagnostics: 0	103	Finished successfully: 17 Feb 2022, 19:47:41	PIC4550_ESP8266.mcppi
