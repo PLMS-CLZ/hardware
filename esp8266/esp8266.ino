@@ -1,7 +1,12 @@
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <ArduinoJson.h>
+#include <SoftwareSerial.h>
 
+#define picRx 14   // D5
+#define picTx 12   // D6
+
+SoftwareSerial picSerial;
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
@@ -24,6 +29,9 @@ void setup()
 {
   Serial.begin(9600);
 
+  // baud frame/parity/stop rx tx inverse
+  picSerial.begin(9600, SWSERIAL_8N1, picRx, picTx, false); 
+
   pinMode(LED_BUILTIN, OUTPUT);
 
   WiFi.mode(WIFI_STA);
@@ -36,9 +44,11 @@ void loop()
 {
   wifiStatusLed();
 
-  if (Serial.available() > 0)
+  if (picSerial.available() > 0)
   {
-    picReceive((char)Serial.read());
+    char x = picSerial.read();
+    Serial.write(x);
+    picReceive(x);
   }
 
   if (isWifiConnected())
@@ -49,6 +59,12 @@ void loop()
     }
     else
     {
+      Serial.print("Connecting to ");
+      Serial.print(ssid);
+      Serial.print(" ");
+      Serial.print(password);
+      Serial.println("...");
+
       mqttConnect();
     }
   }
@@ -94,6 +110,8 @@ void mqttConnect()
   {
     lastReconnectAttempt = now;
 
+    Serial.println("Connecting to Laravel API...");
+
     // Attempt to reconnect
     if (mqttClient.connect("maincontroller"))
     {
@@ -103,6 +121,7 @@ void mqttConnect()
     if (isMqttConnected())
     {
       lastReconnectAttempt = 0;
+      Serial.println("Connected to Laravel API");
     }
   }
 }
@@ -110,13 +129,13 @@ void mqttConnect()
 void mqttReceive(char *topic, byte *payload, unsigned int length)
 {
   // Send to PIC
-  Serial.println("STX");
-  Serial.println(topic);
+  picSerial.println("STX");
+  picSerial.println(topic);
   for (int i = 0; i < length; i++)
   {
-    Serial.print((char)payload[i]);
+    picSerial.write(payload[i]);
   }
-  Serial.println("ETX");
+  picSerial.println();
 }
 
 void picReceive(char input)
