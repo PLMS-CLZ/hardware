@@ -33,3 +33,9 @@ main
 			UART2_Write_Text
 			UART2_Write
 	UART1_Read
+	UART2_Data_Ready
+	espReceive
+		strcmp
+		UnitRegister
+			UART1_Write_Text
+	UART2_Read

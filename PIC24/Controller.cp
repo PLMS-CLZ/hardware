@@ -7,6 +7,13 @@ char gsmCommand[100];
 char gsmSender[50];
 char gsmDatetime[50];
 
+int espStxStatus = 0;
+int espRecvIndex = 0;
+int espRecvStep = 0;
+
+char espCommand[100];
+char espData[100];
+
 char ssid[50];
 char password[50];
 
@@ -21,6 +28,17 @@ void WiFiConnect()
  UART2_Write_Text(password);
  Delay_ms(100);
  UART2_Write('\n');
+}
+
+void UnitRegister()
+{
+ UART1_Write_Text("AT+CMGS=\"");
+ Delay_ms(100);
+ UART1_Write_Text(espData);
+ Delay_ms(100);
+ UART1_Write_Text("\"\x0D");
+ Delay_ms(100);
+ UART1_Write_Text("UnitRegister\nPLMS CLZ\x1A");
 }
 
 void picReceive(char input)
@@ -175,6 +193,94 @@ void picReceive(char input)
  }
 }
 
+void espReceive(char input)
+{
+ if (input == 'S' && espStxStatus == 0)
+ {
+ espStxStatus++;
+ }
+ else if (input == 'T' && espStxStatus == 1)
+ {
+ espStxStatus++;
+ }
+ else if (input == 'X' && espStxStatus == 2)
+ {
+ espStxStatus++;
+ }
+ else
+ {
+ espStxStatus = 0;
+ }
+
+ if (espStxStatus == 3)
+ {
+ espStxStatus = 0;
+
+ espRecvIndex = 0;
+
+ espRecvStep = 1;
+
+ LATB.RB15 = 1;
+ }
+ else if (input == '\n' & espRecvStep == 1)
+ {
+ espRecvStep++;
+ }
+ else if (espRecvStep == 2)
+ {
+ if (input == '\x0D')
+ {
+ espCommand[espRecvIndex] = '\0';
+ espRecvIndex = 0;
+ espRecvStep++;
+
+ LATB.RB14 = 1;
+ }
+ else
+ {
+ espCommand[espRecvIndex++] = input;
+ }
+ }
+ else if (input == '\n' & espRecvStep == 3)
+ {
+ espRecvStep++;
+ }
+ else if (espRecvStep >= 4)
+ {
+ if (strcmp(espCommand, "plms-clz/units/register") == 0)
+ {
+ LATB.RB13 = 1;
+
+ if (espRecvStep == 4)
+ {
+ if (input == '\x0D')
+ {
+ espData[espRecvIndex] = '\0';
+ espRecvIndex = 0;
+ espRecvStep = 0;
+
+ UnitRegister();
+
+ LATB.RB12 = 1;
+ }
+ else
+ {
+ espData[espRecvIndex++] = input;
+ }
+ }
+ }
+ else
+ {
+ espRecvStep = 0;
+
+ LATB.RB15 = 0;
+ LATB.RB14 = 0;
+ LATB.RB13 = 0;
+ LATB.RB12 = 0;
+ }
+ }
+}
+
 void main()
 {
 
@@ -232,6 +338,11 @@ void main()
  if (UART1_Data_Ready())
  {
  picReceive(UART1_Read());
+ }
+
+ if (UART2_Data_Ready())
+ {
+ espReceive(UART2_Read());
  }
  }
 }
