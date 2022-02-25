@@ -1,5 +1,6 @@
 /.vscode
 /**/*.asm
 /**/*.hex
+/**/*.ini
 /**/*.log
 /**/*.lst
