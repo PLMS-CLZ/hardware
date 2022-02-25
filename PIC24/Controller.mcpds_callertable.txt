@@ -32,6 +32,9 @@ main
 		WiFiConnect
 			UART2_Write_Text
 			UART2_Write
+		UnitRegisterResponse
+			UART2_Write_Text
+			UART2_Write
 	UART1_Read
 	UART2_Data_Ready
 	espReceive

@@ -5,6 +5,7 @@ esprecvindex
 esprecvstep
 espstxstatus
 gsmcommand
+gsmdata
 gsmdatetime
 gsmrecvindex
 gsmrecvstep
@@ -15,4 +16,5 @@ password
 picreceive
 ssid
 unitregister
+unitregisterresponse
 wificonnect

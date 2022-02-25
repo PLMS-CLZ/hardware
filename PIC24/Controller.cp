@@ -1,21 +1,46 @@
 #line 1 "D:/keanu/Documents/GitHub/controller/PIC24/Controller.c"
-int gsmStxStatus = 0;
-int gsmRecvIndex = 0;
-int gsmRecvStep = 0;
-
-char gsmCommand[100];
-char gsmSender[50];
-char gsmDatetime[50];
-
 int espStxStatus = 0;
 int espRecvIndex = 0;
 int espRecvStep = 0;
 
-char espCommand[100];
+int gsmStxStatus = 0;
+int gsmRecvIndex = 0;
+int gsmRecvStep = 0;
+
+char espCommand[50];
 char espData[100];
+
+char gsmSender[20];
+char gsmDatetime[25];
+char gsmCommand[50];
+char gsmData[100];
 
 char ssid[50];
 char password[50];
+
+void UnitRegister()
+{
+ UART1_Write_Text("AT+CMGS=\"");
+ Delay_ms(100);
+ UART1_Write_Text(espData);
+ Delay_ms(100);
+ UART1_Write_Text("\"\x0D");
+ Delay_ms(100);
+ UART1_Write_Text("PLMS-UnitRegister-CLZ\x1A");
+}
+
+void UnitRegisterResponse()
+{
+ UART2_Write_Text("\r\nSTX\nUnitRegisterResponse\n");
+ Delay_ms(100);
+ UART2_Write_Text(gsmSender);
+ Delay_ms(100);
+ UART2_Write('\n');
+ Delay_ms(100);
+ UART2_Write_Text(gsmData);
+ Delay_ms(100);
+ UART2_Write('\n');
+}
 
 void WiFiConnect()
 {
@@ -28,17 +53,6 @@ void WiFiConnect()
  UART2_Write_Text(password);
  Delay_ms(100);
  UART2_Write('\n');
-}
-
-void UnitRegister()
-{
- UART1_Write_Text("AT+CMGS=\"");
- Delay_ms(100);
- UART1_Write_Text(espData);
- Delay_ms(100);
- UART1_Write_Text("\"\x0D");
- Delay_ms(100);
- UART1_Write_Text("UnitRegister\nPLMS CLZ\x1A");
 }
 
 void picReceive(char input)
@@ -80,6 +94,9 @@ void picReceive(char input)
  gsmRecvStep = 1;
 
  LATB.RB15 = 1;
+ LATB.RB14 = 0;
+ LATB.RB13 = 0;
+ LATB.RB12 = 0;
  }
  else if (input == '"' && gsmRecvStep == 1)
  {
@@ -168,16 +185,41 @@ void picReceive(char input)
  gsmRecvIndex = 0;
  gsmRecvStep = 0;
 
+ WiFiConnect();
+
  LATB.RB15 = 0;
  LATB.RB14 = 0;
  LATB.RB13 = 0;
  LATB.RB12 = 0;
-
- WiFiConnect();
  }
  else
  {
  password[gsmRecvIndex++] = input;
+ }
+ }
+ }
+ else if (strcmp(gsmCommand, "PLMS-UnitRegisterResponse-CLZ") == 0)
+ {
+ LATB.RB13 = 1;
+
+ if (gsmRecvStep == 9)
+ {
+ if (input == '\x0D')
+ {
+ gsmData[gsmRecvIndex] = '\0';
+ gsmRecvIndex = 0;
+ gsmRecvStep = 0;
+
+ UnitRegisterResponse();
+
+ LATB.RB15 = 0;
+ LATB.RB14 = 0;
+ LATB.RB13 = 0;
+ LATB.RB12 = 0;
+ }
+ else
+ {
+ gsmData[gsmRecvIndex++] = input;
  }
  }
  }
@@ -214,13 +256,19 @@ void espReceive(char input)
 
  if (espStxStatus == 3)
  {
+
  espStxStatus = 0;
 
+
  espRecvIndex = 0;
+
 
  espRecvStep = 1;
 
  LATB.RB15 = 1;
+ LATB.RB14 = 0;
+ LATB.RB13 = 0;
+ LATB.RB12 = 0;
  }
  else if (input == '\n' & espRecvStep == 1)
  {
@@ -230,8 +278,13 @@ void espReceive(char input)
  {
  if (input == '\x0D')
  {
+
  espCommand[espRecvIndex] = '\0';
+
+
  espRecvIndex = 0;
+
+
  espRecvStep++;
 
  LATB.RB14 = 1;
@@ -261,7 +314,10 @@ void espReceive(char input)
 
  UnitRegister();
 
- LATB.RB12 = 1;
+ LATB.RB15 = 0;
+ LATB.RB14 = 0;
+ LATB.RB13 = 0;
+ LATB.RB12 = 0;
  }
  else
  {
@@ -317,7 +373,7 @@ void main()
  UART1_Write_Text("PIC UART1 Ready!");
  Delay_ms(100);
  UART2_Write_Text("PIC UART2 Ready!");
- Delay_ms(10000);
+ Delay_ms(30000);
 
  LATB.RB12 = 0;
 
