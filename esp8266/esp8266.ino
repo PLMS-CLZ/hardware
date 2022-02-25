@@ -3,8 +3,8 @@
 #include <PubSubClient.h>
 #include <SoftwareSerial.h>
 
-#define picRx 14   // D5
-#define picTx 12   // D6
+#define picRx 14 // D5
+#define picTx 12 // D6
 
 SoftwareSerial picSerial;
 WiFiClient wifiClient;
@@ -30,7 +30,7 @@ void setup()
   Serial.begin(9600);
 
   // baud frame/parity/stop rx tx inverse
-  picSerial.begin(9600, SWSERIAL_8N1, picRx, picTx, false); 
+  picSerial.begin(9600, SWSERIAL_8N1, picRx, picTx, false);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -136,6 +136,15 @@ void mqttReceive(char *topic, byte *payload, unsigned int length)
     picSerial.write(payload[i]);
   }
   picSerial.println();
+
+  // Send to Debug
+  Serial.println("STX");
+  Serial.println(topic);
+  for (int i = 0; i < length; i++)
+  {
+    Serial.write(payload[i]);
+  }
+  Serial.println();
 }
 
 void picReceive(char input)
