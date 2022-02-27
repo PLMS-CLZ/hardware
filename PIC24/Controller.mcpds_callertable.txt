@@ -26,12 +26,22 @@ main
 	UART1_Read_Text
 		UART1_Data_Ready
 		UART1_Read
-	UART1_Data_Ready
-	picReceive
-		strcmp
+	WiFiInit
+		FLASH_Read_Compact
 		WiFiConnect
 			UART2_Write_Text
 			UART2_Write
+	UART1_Data_Ready
+	gsmReceive
+		strcmp
+		WiFiConnect
+		WiFiSave
+			UART2_Write_Text
+			FLASH_Erase
+				FLASH_Write_DoWrite
+					KeySequence
+			FLASH_Write_Compact
+				FLASH_Write_DoWrite
 		UnitRegisterResponse
 			UART2_Write_Text
 			UART2_Write

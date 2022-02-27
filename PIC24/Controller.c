@@ -14,8 +14,7 @@ char gsmDatetime[25];
 char gsmCommand[50];
 char gsmData[100];
 
-char ssid[50];
-char password[50];
+char flashData[100];
 
 void UnitRegister()
 {
@@ -23,7 +22,7 @@ void UnitRegister()
     Delay_ms(100);
     UART1_Write_Text(espData);
     Delay_ms(100);
-    UART1_Write_Text("\"\x0D");
+    UART1_Write_Text("\"\r");
     Delay_ms(100);
     UART1_Write_Text("PLMS-UnitRegister-CLZ\x1A");
 }
@@ -38,23 +37,50 @@ void UnitRegisterResponse()
     Delay_ms(100);
     UART2_Write_Text(gsmData);
     Delay_ms(100);
-    UART2_Write('\n');
+    UART2_Write('\0');
 }
 
-void WiFiConnect()
+void WiFiConnect(char *wifi)
 {
     UART2_Write_Text("\r\nSTX\nWiFiConnect\n");
     Delay_ms(100);
-    UART2_Write_Text(ssid);
+    UART2_Write_Text(wifi);
     Delay_ms(100);
-    UART2_Write('\n');
-    Delay_ms(100);
-    UART2_Write_Text(password);
-    Delay_ms(100);
-    UART2_Write('\n');
+    UART2_Write('\0');
 }
 
-void picReceive(char input)
+void WiFiSave(char *wifi)
+{
+    UART2_Write_Text("\r\nWiFi Saving\n");
+
+    FLASH_Erase(0x4400);
+    Delay_ms(100);
+    FLASH_Write_Compact(0x4480, wifi);
+
+    UART2_Write_Text("\r\nWiFi Saved\n");
+}
+
+void WiFiInit()
+{
+    int i;
+
+    FLASH_Read_Compact(0x4480, flashData, 100);
+
+    if (flashData[0] == 0xFF)
+        return;
+
+    for (i = 0; i < 100; i++)
+    {
+        if (flashData[i] == '\0')
+            break;
+        else if (i == 99)
+            return;
+    }
+
+    WiFiConnect(flashData);
+}
+
+void gsmReceive(char input)
 {
     if (input == '+' && gsmStxStatus == 0)
     {
@@ -163,37 +189,25 @@ void picReceive(char input)
 
             if (gsmRecvStep == 9)
             {
-                if (input == '\n')
+                if (input == '\r')
                 {
-                    ssid[gsmRecvIndex] = '\0';
-                    gsmRecvIndex = 0;
-                    gsmRecvStep++;
-
-                    LATB.RB12 = 1;
-                }
-                else
-                {
-                    ssid[gsmRecvIndex++] = input;
-                }
-            }
-            else if (gsmRecvStep == 10)
-            {
-                if (input == '\x0D')
-                {
-                    password[gsmRecvIndex] = '\0';
+                    gsmData[gsmRecvIndex] = '\0';
                     gsmRecvIndex = 0;
                     gsmRecvStep = 0;
 
-                    WiFiConnect();
+                    WiFiConnect(gsmData);
 
                     LATB.RB15 = 0;
                     LATB.RB14 = 0;
+
+                    WiFiSave(gsmData);
+
                     LATB.RB13 = 0;
                     LATB.RB12 = 0;
                 }
                 else
                 {
-                    password[gsmRecvIndex++] = input;
+                    gsmData[gsmRecvIndex++] = input;
                 }
             }
         }
@@ -203,7 +217,7 @@ void picReceive(char input)
 
             if (gsmRecvStep == 9)
             {
-                if (input == '\x0D')
+                if (input == '\r')
                 {
                     gsmData[gsmRecvIndex] = '\0';
                     gsmRecvIndex = 0;
@@ -248,12 +262,16 @@ void espReceive(char input)
     {
         espStxStatus++;
     }
+    else if (input == '\n' && espStxStatus == 3)
+    {
+        espStxStatus++;
+    }
     else
     {
         espStxStatus = 0;
     }
 
-    if (espStxStatus == 3)
+    if (espStxStatus == 4)
     {
         // reset stx status
         espStxStatus = 0;
@@ -269,13 +287,9 @@ void espReceive(char input)
         LATB.RB13 = 0;
         LATB.RB12 = 0;
     }
-    else if (input == '\n' & espRecvStep == 1)
+    else if (espRecvStep == 1)
     {
-        espRecvStep++;
-    }
-    else if (espRecvStep == 2)
-    {
-        if (input == '\x0D')
+        if (input == '\n')
         {
             // add terminating char
             espCommand[espRecvIndex] = '\0';
@@ -293,19 +307,15 @@ void espReceive(char input)
             espCommand[espRecvIndex++] = input;
         }
     }
-    else if (input == '\n' & espRecvStep == 3)
-    {
-        espRecvStep++;
-    }
-    else if (espRecvStep >= 4)
+    else if (espRecvStep >= 2)
     {
         if (strcmp(espCommand, "plms-clz/units/register") == 0)
         {
             LATB.RB13 = 1;
 
-            if (espRecvStep == 4)
+            if (espRecvStep == 2)
             {
-                if (input == '\x0D')
+                if (input == '\0')
                 {
                     espData[espRecvIndex] = '\0';
                     espRecvIndex = 0;
@@ -356,43 +366,42 @@ void main()
     UART1_Init(9600); // GSM
     UART2_Init(9600); // NodeMCU
 
+    // LED Test
     LATB.RB15 = 0;
     LATB.RB14 = 0;
     LATB.RB13 = 0;
     LATB.RB12 = 0;
-
-    // UART Ready
     Delay_ms(5000);
-
     LATB.RB15 = 1;
     LATB.RB14 = 1;
     LATB.RB13 = 1;
     LATB.RB12 = 1;
 
+    // UART Ready
     UART1_Write_Text("PIC UART1 Ready!");
     Delay_ms(100);
     UART2_Write_Text("PIC UART2 Ready!");
     Delay_ms(30000);
 
-    LATB.RB12 = 0;
-
     // Setup GSM
-    UART1_Write_Text("ATE0\x0D");
+    LATB.RB12 = 0;
+    UART1_Write_Text("ATE0\r");
     UART1_Read_Text(gsmCommand, "OK", 255);
     LATB.RB13 = 0;
-    UART1_Write_Text("AT+CMGF=1\x0D");
+    UART1_Write_Text("AT+CMGF=1\r");
     UART1_Read_Text(gsmCommand, "OK", 255);
     LATB.RB14 = 0;
-    UART1_Write_Text("AT+CNMI=1,2,0,0,0\x0D");
+    UART1_Write_Text("AT+CNMI=1,2,0,0,0\r");
     UART1_Read_Text(gsmCommand, "OK", 255);
-
     LATB.RB15 = 0;
+
+    WiFiInit();
 
     while (1)
     {
         if (UART1_Data_Ready())
         {
-            picReceive(UART1_Read());
+            gsmReceive(UART1_Read());
         }
 
         if (UART2_Data_Ready())
