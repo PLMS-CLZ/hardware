@@ -125,6 +125,7 @@ void mqttConnect()
         if (isMqttConnected())
         {
             lastReconnectAttempt = 0;
+
             Serial.println("Connected to Laravel API");
         }
     }
@@ -133,21 +134,18 @@ void mqttConnect()
 void mqttReceive(char *topic, byte *payload, unsigned int length)
 {
     // Send to PIC
-    picSerial.println("STX");
-    picSerial.println(topic);
+    picSerial.print("STX\n");
+    picSerial.print(topic);
+    picSerial.write('\n');
     for (int i = 0; i < length; i++)
-    {
         picSerial.write(payload[i]);
-    }
-    picSerial.println();
+    picSerial.write('\0');
 
     // Send to Debug
     Serial.println("STX");
     Serial.println(topic);
     for (int i = 0; i < length; i++)
-    {
         Serial.write(payload[i]);
-    }
     Serial.println();
 }
 
@@ -218,7 +216,7 @@ void picReceive(char input)
             }
             else if (picRecvStep == 3)
             {
-                if (input == '\n')
+                if (input == '\0')
                 {
                     password[picRecvIndex] = '\0';
                     picRecvStep = 0;
@@ -282,7 +280,7 @@ void picReceive(char input)
             }
             else if (picRecvStep == 5)
             {
-                if (input == '\n')
+                if (input == '\0')
                 {
                     picData[picRecvIndex] = '\0';
                     picRecvIndex = 0;
