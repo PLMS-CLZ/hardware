@@ -9,7 +9,6 @@
 SoftwareSerial picSerial;
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
-DynamicJsonDocument jsonData(200);
 
 const char *mqtt_broker = "test.mosquitto.org";
 
@@ -26,8 +25,7 @@ char picData[100];
 
 char ssid[50];
 char password[50];
-
-char jsonSerial[200];
+char mqttTopic[50];
 
 void setup()
 {
@@ -119,7 +117,7 @@ void mqttConnect()
         // Attempt to reconnect
         if (mqttClient.connect("maincontroller"))
         {
-            mqttClient.subscribe("plms-clz/units/register");
+            mqttClient.subscribe("PLMS-ControllerCommands-CLZ");
         }
 
         if (isMqttConnected())
@@ -133,20 +131,15 @@ void mqttConnect()
 
 void mqttReceive(char *topic, byte *payload, unsigned int length)
 {
-    // Send to PIC
     picSerial.print("STX\n");
-    picSerial.print(topic);
-    picSerial.write('\n');
+    Serial.print("MQTT STX\n");
     for (int i = 0; i < length; i++)
+    {
         picSerial.write(payload[i]);
-    picSerial.write('\0');
-
-    // Send to Debug
-    Serial.println("STX");
-    Serial.println(topic);
-    for (int i = 0; i < length; i++)
         Serial.write(payload[i]);
-    Serial.println();
+    }
+    picSerial.write('\0');
+    Serial.print("\0");
 }
 
 void picReceive(char input)
@@ -219,6 +212,7 @@ void picReceive(char input)
                 if (input == '\0')
                 {
                     password[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
                     picRecvStep = 0;
 
                     // connect to wifi
@@ -230,55 +224,22 @@ void picReceive(char input)
                 }
             }
         }
-        else if (strcmp(picCommand, "UnitRegisterResponse") == 0)
+        else if (strcmp(picCommand, "MqttPublish") == 0)
         {
             if (picRecvStep == 2)
             {
                 if (input == '\n')
                 {
-                    picData[picRecvIndex] = '\0';
+                    mqttTopic[picRecvIndex] = '\0';
                     picRecvIndex = 0;
                     picRecvStep++;
-
-                    jsonData.clear();
-                    jsonData["phone_number"] = String(picData);
                 }
                 else
                 {
-                    picData[picRecvIndex++] = input;
+                    mqttTopic[picRecvIndex++] = input;
                 }
             }
             else if (picRecvStep == 3)
-            {
-                if (input == '\n')
-                {
-                    picData[picRecvIndex] = '\0';
-                    picRecvIndex = 0;
-                    picRecvStep++;
-
-                    jsonData["active"] = String(picData).toInt();
-                }
-                else
-                {
-                    picData[picRecvIndex++] = input;
-                }
-            }
-            else if (picRecvStep == 4)
-            {
-                if (input == '\n')
-                {
-                    picData[picRecvIndex] = '\0';
-                    picRecvIndex = 0;
-                    picRecvStep++;
-
-                    jsonData["latitude"] = String(picData).toDouble();
-                }
-                else
-                {
-                    picData[picRecvIndex++] = input;
-                }
-            }
-            else if (picRecvStep == 5)
             {
                 if (input == '\0')
                 {
@@ -286,11 +247,7 @@ void picReceive(char input)
                     picRecvIndex = 0;
                     picRecvStep = 0;
 
-                    jsonData["longitude"] = String(picData).toDouble();
-
-                    serializeJson(jsonData, jsonSerial);
-
-                    mqttClient.publish("plms-clz/units/response", jsonSerial);
+                    mqttClient.publish(mqttTopic, picData);
                 }
                 else
                 {
