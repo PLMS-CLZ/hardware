@@ -3,6 +3,7 @@ int espRecvIndex = 0;
 int espRecvStep = 0;
 
 int gsmStxStatus = 0;
+int gsmRecvType = 0; // Type 1 = Text Received; Type 2 = Text Result
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
 
@@ -18,19 +19,27 @@ char flashData[100];
 
 void UnitRegister()
 {
-    UART1_Write_Text("AT+CMGS=\"");
+    // Command
+    UART1_Write_Text("\r\nAT+CMGS=\"");
     Delay_ms(100);
+    // Receiver
     UART1_Write_Text(espData);
     Delay_ms(100);
     UART1_Write_Text("\"\r");
     Delay_ms(100);
+    // Data
     UART1_Write_Text("PLMS-UnitRegister-CLZ\x1A");
 }
 
 void UnitRegisterResponse()
 {
-    UART2_Write_Text("\r\nSTX\nUnitRegisterResponse\n");
+    // Command
+    UART2_Write_Text("\r\nSTX\nMqttPublish\n");
     Delay_ms(100);
+    // Topic
+    UART2_Write_Text("PLMS-UnitRegisterResponse-CLZ\n");
+    Delay_ms(100);
+    // Data
     UART2_Write_Text(gsmSender);
     Delay_ms(100);
     UART2_Write('\n');
@@ -40,10 +49,40 @@ void UnitRegisterResponse()
     UART2_Write('\0');
 }
 
+void MessageSent()
+{
+    // Command
+    UART2_Write_Text("\r\nSTX\nMqttPublish\n");
+    Delay_ms(100);
+    // Topic
+    UART2_Write_Text("PLMS-ControllerResponse-CLZ\n");
+    Delay_ms(100);
+    // Data
+    UART2_Write_Text("MessageSent");
+    Delay_ms(100);
+    UART2_Write('\0');
+}
+
+void ControllerConnected()
+{
+    // Command
+    UART2_Write_Text("\r\nSTX\nMqttPublish\n");
+    Delay_ms(100);
+    // Topic
+    UART2_Write_Text("PLMS-ControllerResponse-CLZ\n");
+    Delay_ms(100);
+    // Data
+    UART2_Write_Text("ControllerConnected");
+    Delay_ms(100);
+    UART2_Write('\0');
+}
+
 void WiFiConnect(char *wifi)
 {
+    // Command
     UART2_Write_Text("\r\nSTX\nWiFiConnect\n");
     Delay_ms(100);
+    // Data
     UART2_Write_Text(wifi);
     Delay_ms(100);
     UART2_Write('\0');
@@ -51,8 +90,6 @@ void WiFiConnect(char *wifi)
 
 void WiFiSave(char *wifi)
 {
-    UART2_Write_Text("\r\nWiFi Saving\n");
-
     FLASH_Erase(0x4400);
     Delay_ms(100);
     FLASH_Write_Compact(0x4480, wifi);
@@ -82,23 +119,36 @@ void WiFiInit()
 
 void gsmReceive(char input)
 {
-    if (input == '+' && gsmStxStatus == 0)
+    if (gsmStxStatus == 0 && input == '+')
     {
         gsmStxStatus++;
     }
-    else if (input == 'C' && gsmStxStatus == 1)
+    else if (gsmStxStatus == 1 && input == 'C')
     {
         gsmStxStatus++;
     }
-    else if (input == 'M' && gsmStxStatus == 2)
+    else if (gsmStxStatus == 2 && input == 'M')
     {
         gsmStxStatus++;
     }
-    else if (input == 'T' && gsmStxStatus == 3)
+    else if (gsmStxStatus == 3 && (input == 'T' || input == 'G'))
+    {
+        if (input == 'T')
+        {
+            gsmRecvType = 1;
+        }
+        else if (input == 'G')
+        {
+            gsmRecvType = 2;
+        }
+
+        gsmStxStatus++;
+    }
+    else if (gsmStxStatus == 4 && ((gsmRecvType == 1 && input == ':') || (gsmRecvType == 2 && input == 'S')))
     {
         gsmStxStatus++;
     }
-    else if (input == ':' && gsmStxStatus == 4)
+    else if (gsmStxStatus == 5 && gsmRecvType == 2 && input == ':')
     {
         gsmStxStatus++;
     }
@@ -107,7 +157,7 @@ void gsmReceive(char input)
         gsmStxStatus = 0;
     }
 
-    if (gsmStxStatus == 5)
+    if ((gsmStxStatus == 5 && gsmRecvType == 1) || (gsmStxStatus == 6 && gsmRecvType == 2))
     {
         // reset stx status
         gsmStxStatus = 0;
@@ -123,127 +173,171 @@ void gsmReceive(char input)
         LATB.RB13 = 0;
         LATB.RB12 = 0;
     }
-    else if (input == '"' && gsmRecvStep == 1)
+    else if (gsmRecvStep >= 1)
     {
-        gsmRecvStep++;
-    }
-    else if (gsmRecvStep == 2)
-    {
-        if (input == '"')
+        if (gsmRecvType == 1)
         {
-            // add terminating char
-            gsmSender[gsmRecvIndex] = '\0';
+            // CMT Region (Text Messages received by GSM)
 
-            // reset index
-            gsmRecvIndex = 0;
-
-            // proceed to next step
-            gsmRecvStep++;
-        }
-        else
-        {
-            gsmSender[gsmRecvIndex++] = input;
-        }
-    }
-    else if (input == '"' && gsmRecvStep >= 3 && gsmRecvStep <= 5)
-    {
-        gsmRecvStep++;
-    }
-    else if (gsmRecvStep == 6)
-    {
-        if (input == '"')
-        {
-            gsmDatetime[gsmRecvIndex] = '\0';
-            gsmRecvIndex = 0;
-            gsmRecvStep++;
-        }
-        else
-        {
-            gsmDatetime[gsmRecvIndex++] = input;
-        }
-    }
-    else if (input == '\n' && gsmRecvStep == 7)
-    {
-        gsmRecvStep++;
-    }
-    else if (gsmRecvStep == 8)
-    {
-        if (input == '\n')
-        {
-            gsmCommand[gsmRecvIndex] = '\0';
-            gsmRecvIndex = 0;
-            gsmRecvStep++;
-
-            LATB.RB14 = 1;
-        }
-        else
-        {
-            gsmCommand[gsmRecvIndex++] = input;
-        }
-    }
-    else if (gsmRecvStep >= 9)
-    {
-        if (strcmp(gsmCommand, "WiFiConnect") == 0)
-        {
-            LATB.RB13 = 1;
-
-            if (gsmRecvStep == 9)
+            if (input == '"' && gsmRecvStep == 1)
             {
-                if (input == '\r')
+                gsmRecvStep++;
+            }
+            else if (gsmRecvStep == 2)
+            {
+                if (input == '"')
                 {
-                    gsmData[gsmRecvIndex] = '\0';
+                    // add terminating char
+                    gsmSender[gsmRecvIndex] = '\0';
+
+                    // reset index
                     gsmRecvIndex = 0;
-                    gsmRecvStep = 0;
 
-                    WiFiConnect(gsmData);
-
-                    LATB.RB15 = 0;
-                    LATB.RB14 = 0;
-
-                    WiFiSave(gsmData);
-
-                    LATB.RB13 = 0;
-                    LATB.RB12 = 0;
+                    // proceed to next step
+                    gsmRecvStep++;
                 }
                 else
                 {
-                    gsmData[gsmRecvIndex++] = input;
+                    gsmSender[gsmRecvIndex++] = input;
                 }
             }
-        }
-        else if (strcmp(gsmCommand, "PLMS-UnitRegisterResponse-CLZ") == 0)
-        {
-            LATB.RB13 = 1;
-
-            if (gsmRecvStep == 9)
+            else if (input == '"' && gsmRecvStep >= 3 && gsmRecvStep <= 5)
             {
-                if (input == '\r')
+                gsmRecvStep++;
+            }
+            else if (gsmRecvStep == 6)
+            {
+                if (input == '"')
                 {
-                    gsmData[gsmRecvIndex] = '\0';
+                    gsmDatetime[gsmRecvIndex] = '\0';
                     gsmRecvIndex = 0;
-                    gsmRecvStep = 0;
+                    gsmRecvStep++;
+                }
+                else
+                {
+                    gsmDatetime[gsmRecvIndex++] = input;
+                }
+            }
+            else if (input == '\n' && gsmRecvStep == 7)
+            {
+                gsmRecvStep++;
+            }
+            else if (gsmRecvStep == 8)
+            {
+                if (input == '\n')
+                {
+                    gsmCommand[gsmRecvIndex] = '\0';
+                    gsmRecvIndex = 0;
+                    gsmRecvStep++;
 
-                    UnitRegisterResponse();
+                    LATB.RB14 = 1;
+                }
+                else
+                {
+                    gsmCommand[gsmRecvIndex++] = input;
+                }
+            }
+            else if (gsmRecvStep >= 9)
+            {
+                if (strcmp(gsmCommand, "WiFiConnect") == 0)
+                {
+                    LATB.RB13 = 1;
+
+                    if (gsmRecvStep == 9)
+                    {
+                        if (input == '\r')
+                        {
+                            gsmData[gsmRecvIndex] = '\0';
+                            gsmRecvIndex = 0;
+                            gsmRecvStep = 0;
+                            gsmRecvType = 0;
+
+                            LATB.RB12 = 1;
+
+                            WiFiConnect(gsmData);
+
+                            LATB.RB15 = 0;
+                            LATB.RB14 = 0;
+
+                            WiFiSave(gsmData);
+
+                            LATB.RB13 = 0;
+                            LATB.RB12 = 0;
+                        }
+                        else
+                        {
+                            gsmData[gsmRecvIndex++] = input;
+                        }
+                    }
+                }
+                else if (strcmp(gsmCommand, "PLMS-UnitRegisterResponse-CLZ") == 0)
+                {
+                    LATB.RB13 = 1;
+
+                    if (gsmRecvStep == 9)
+                    {
+                        if (input == '\r')
+                        {
+                            gsmData[gsmRecvIndex] = '\0';
+                            gsmRecvIndex = 0;
+                            gsmRecvStep = 0;
+                            gsmRecvType = 0;
+
+                            LATB.RB12 = 1;
+
+                            UnitRegisterResponse();
+
+                            LATB.RB15 = 0;
+                            LATB.RB14 = 0;
+                            LATB.RB13 = 0;
+                            LATB.RB12 = 0;
+                        }
+                        else
+                        {
+                            gsmData[gsmRecvIndex++] = input;
+                        }
+                    }
+                }
+                else
+                {
+                    gsmRecvStep = 0;
+                    gsmRecvType = 0;
 
                     LATB.RB15 = 0;
                     LATB.RB14 = 0;
                     LATB.RB13 = 0;
                     LATB.RB12 = 0;
                 }
-                else
-                {
-                    gsmData[gsmRecvIndex++] = input;
-                }
             }
         }
-        else
+        else if (gsmRecvType == 2)
         {
-            gsmRecvStep = 0;
+            // CMGS Result Region
 
-            LATB.RB15 = 0;
-            LATB.RB14 = 0;
-            LATB.RB13 = 0;
-            LATB.RB12 = 0;
+            if (input == '\r' && (gsmRecvStep == 1 || gsmRecvStep == 3))
+            {
+                gsmRecvStep++;
+            }
+            else if (input == '\n' && (gsmRecvStep == 2 || gsmRecvStep == 4))
+            {
+                gsmRecvStep++;
+            }
+            else if (input == 'O' && gsmRecvStep == 5)
+            {
+                gsmRecvStep++;
+            }
+            else if (input == 'K' && gsmRecvStep == 6)
+            {
+                gsmRecvStep = 0;
+                gsmRecvType = 0;
+
+                MessageSent();
+
+                LATB.RB15 = 0;
+                LATB.RB14 = 0;
+                LATB.RB13 = 0;
+                LATB.RB12 = 0;
+            }
         }
     }
 }
@@ -309,7 +403,7 @@ void espReceive(char input)
     }
     else if (espRecvStep >= 2)
     {
-        if (strcmp(espCommand, "plms-clz/units/register") == 0)
+        if (strcmp(espCommand, "UnitRegister") == 0)
         {
             LATB.RB13 = 1;
 
@@ -321,10 +415,15 @@ void espReceive(char input)
                     espRecvIndex = 0;
                     espRecvStep = 0;
 
-                    UnitRegister();
+                    LATB.RB12 = 1;
+
+                    ControllerConnected();
 
                     LATB.RB15 = 0;
                     LATB.RB14 = 0;
+
+                    UnitRegister();
+
                     LATB.RB13 = 0;
                     LATB.RB12 = 0;
                 }
@@ -378,9 +477,9 @@ void main()
     LATB.RB12 = 1;
 
     // UART Ready
-    UART1_Write_Text("PIC UART1 Ready!");
+    UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
     Delay_ms(100);
-    UART2_Write_Text("PIC UART2 Ready!");
+    UART2_Write_Text("\r\nPIC UART2 Ready!\r\n");
     Delay_ms(30000);
 
     // Setup GSM

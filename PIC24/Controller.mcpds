@@ -53,5 +53,5 @@ Count=2
 [LIB_EXPANDED_NODES]
 0=mikroE Libraries
 1=System Libraries
-107=C_String
+776=UART
 Count=3

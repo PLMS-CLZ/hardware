@@ -36,19 +36,25 @@ main
 		strcmp
 		WiFiConnect
 		WiFiSave
-			UART2_Write_Text
 			FLASH_Erase
 				FLASH_Write_DoWrite
 					KeySequence
 			FLASH_Write_Compact
 				FLASH_Write_DoWrite
+			UART2_Write_Text
 		UnitRegisterResponse
+			UART2_Write_Text
+			UART2_Write
+		MessageSent
 			UART2_Write_Text
 			UART2_Write
 	UART1_Read
 	UART2_Data_Ready
 	espReceive
 		strcmp
+		ControllerConnected
+			UART2_Write_Text
+			UART2_Write
 		UnitRegister
 			UART1_Write_Text
 	UART2_Read

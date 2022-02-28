@@ -1259,6 +1259,7 @@ cnpu1
 cnpu1bits
 cnpu2
 cnpu2bits
+controllerconnected
 corcon
 corconbits
 cosc
@@ -1711,6 +1712,7 @@ gsmdatetime
 gsmreceive
 gsmrecvindex
 gsmrecvstep
+gsmrecvtype
 gsmsender
 gsmstxstatus
 halfsec
@@ -2834,6 +2836,7 @@ memcmp
 memcpy
 memmove
 memset
+messagesent
 mi2c1ie
 mi2c1ie
 mi2c1ie_bit
