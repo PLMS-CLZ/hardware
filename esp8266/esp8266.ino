@@ -1,20 +1,28 @@
 #include <ArduinoJson.h>
+#include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <SoftwareSerial.h>
+#include <WiFiClientSecureBearSSL.h>
 
 #define picRx 14 // D5
 #define picTx 12 // D6
 
 SoftwareSerial picSerial;
 WiFiClient wifiClient;
+HTTPClient httpClient;
 PubSubClient mqttClient(wifiClient);
+DynamicJsonDocument jsonData(1024);
 
 const char *mqtt_broker = "test.mosquitto.org";
 
 long lastWifiOnUpdate = 0;
 long lastWifiOffUpdate = 0;
 long lastReconnectAttempt = 0;
+
+char apiEmail[50];
+char apiPassword[50];
+char apiToken[50];
 
 int picStxStatus = 0;
 int picRecvIndex = 0;
@@ -26,6 +34,7 @@ char picData[100];
 char ssid[50];
 char password[50];
 char mqttTopic[50];
+char jsonSerial[1024];
 
 void setup()
 {
@@ -126,6 +135,46 @@ void mqttConnect()
 
             Serial.println("Connected to Laravel API");
         }
+    }
+}
+
+void apiLogin()
+{
+    Serial.println("Logging in...");
+
+    std::unique_ptr<BearSSL::WiFiClientSecure> wifiClientSecure(new BearSSL::WiFiClientSecure);
+    wifiClientSecure->setInsecure();
+
+    httpClient.useHTTP10(true);
+
+    if (httpClient.begin(*wifiClientSecure, "https://plms-clz.herokuapp.com/api/auth/user/login"))
+    {
+        httpClient.addHeader("Accept", "application/json");
+        httpClient.addHeader("Content-Type", "application/json");
+
+        jsonData.clear();
+        jsonData["email"] = apiEmail;
+        jsonData["password"] = apiPassword;
+        serializeJson(jsonData, jsonSerial);
+
+        int responseCode = httpClient.POST(jsonSerial);
+
+        Serial.print("Response Code: ");
+        Serial.println(responseCode);
+
+        if (responseCode == HTTP_CODE_OK)
+        {
+            deserializeJson(jsonData, httpClient.getString());
+            String response = jsonData["token"];
+            response.toCharArray(apiToken, response.length());
+            Serial.println(apiToken);
+        }
+        else
+        {
+            Serial.println(httpClient.getString());
+        }
+
+        httpClient.end();
     }
 }
 
