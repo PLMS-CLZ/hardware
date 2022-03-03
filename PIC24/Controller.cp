@@ -484,14 +484,16 @@ void main()
  Delay_ms(30000);
 
 
+ UART1_Write_Text("ATE0\r\n");
+ UART1_Read_Text(gsmCommand, "OK", 255);
  LATB.RB12 = 0;
- UART1_Write_Text("ATE0\r");
+ UART1_Write_Text("AT+CMGD=1,4\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
  LATB.RB13 = 0;
- UART1_Write_Text("AT+CMGF=1\r");
+ UART1_Write_Text("AT+CNMI=3,2,0,1,1\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
  LATB.RB14 = 0;
- UART1_Write_Text("AT+CNMI=1,2,0,0,0\r");
+ UART1_Write_Text("AT+CMGF=1\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
  LATB.RB15 = 0;
 
