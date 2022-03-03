@@ -273,6 +273,37 @@ void picReceive(char input)
                 }
             }
         }
+        else if (strcmp(picCommand, "ApiLogin") == 0)
+        {
+            if (picRecvStep == 2)
+            {
+                if (input == '\n')
+                {
+                    apiEmail[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
+                    picRecvStep++;
+                }
+                else
+                {
+                    apiEmail[picRecvIndex++] = input;
+                }
+            }
+            else if (picRecvStep == 3)
+            {
+                if (input == '\0')
+                {
+                    apiPassword[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
+                    picRecvStep = 0;
+
+                    apiLogin();
+                }
+                else
+                {
+                    apiPassword[picRecvIndex++] = input;
+                }
+            }
+        }
         else if (strcmp(picCommand, "MqttPublish") == 0)
         {
             if (picRecvStep == 2)
