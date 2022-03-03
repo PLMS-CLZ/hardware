@@ -23,14 +23,14 @@ main
 		UART1_Write
 	UART2_Write_Text
 		UART2_Write
-	UART1_Read_Text
-		UART1_Data_Ready
-		UART1_Read
 	WiFiInit
 		FLASH_Read_Compact
 		WiFiConnect
 			UART2_Write_Text
 			UART2_Write
+	UART1_Read_Text
+		UART1_Data_Ready
+		UART1_Read
 	UART1_Data_Ready
 	gsmReceive
 		strcmp

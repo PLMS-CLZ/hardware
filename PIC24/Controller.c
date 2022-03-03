@@ -7,15 +7,15 @@ int gsmRecvType = 0; // Type 1 = Text Received; Type 2 = Text Result
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
 
-char espCommand[50];
-char espData[100];
+char espCommand[200];
+char espData[200];
 
 char gsmSender[20];
 char gsmDatetime[25];
-char gsmCommand[50];
-char gsmData[100];
+char gsmCommand[200];
+char gsmData[200];
 
-char flashData[100];
+char flashData[200];
 
 void UnitRegister()
 {
