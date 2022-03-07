@@ -126,13 +126,14 @@ void mqttConnect()
         // Attempt to reconnect
         if (mqttClient.connect("maincontroller"))
         {
+            picSerial.print("STX\nApiLogin\nPLMS-CLZ");
+            picSerial.write('\0');
             mqttClient.subscribe("PLMS-ControllerCommands-CLZ");
         }
 
         if (isMqttConnected())
         {
             lastReconnectAttempt = 0;
-
             Serial.println("Connected to Laravel API");
         }
     }
