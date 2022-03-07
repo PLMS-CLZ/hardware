@@ -15,13 +15,12 @@ PubSubClient mqttClient(wifiClient);
 DynamicJsonDocument jsonData(1024);
 
 const char *mqtt_broker = "test.mosquitto.org";
+const char *apiRoute = "https://plms-clz.herokuapp.com/api";
 
 long lastWifiOnUpdate = 0;
 long lastWifiOffUpdate = 0;
 long lastReconnectAttempt = 0;
 
-char apiEmail[50];
-char apiPassword[50];
 char apiToken[50];
 
 int picStxStatus = 0;
@@ -139,44 +138,33 @@ void mqttConnect()
     }
 }
 
-void apiLogin()
+int apiPost(char *apiPath, char *data)
 {
-    Serial.println("Logging in...");
+    int statusCode = 0;
 
     std::unique_ptr<BearSSL::WiFiClientSecure> wifiClientSecure(new BearSSL::WiFiClientSecure);
     wifiClientSecure->setInsecure();
 
     httpClient.useHTTP10(true);
-
-    if (httpClient.begin(*wifiClientSecure, "https://plms-clz.herokuapp.com/api/auth/user/login"))
+    if (httpClient.begin(*wifiClientSecure, String(apiRoute) + apiPath))
     {
+        httpClient.addHeader("Authorization", apiToken);
         httpClient.addHeader("Accept", "application/json");
         httpClient.addHeader("Content-Type", "application/json");
 
-        jsonData.clear();
-        jsonData["email"] = apiEmail;
-        jsonData["password"] = apiPassword;
-        serializeJson(jsonData, jsonSerial);
+        statusCode = httpClient.POST(data);
 
-        int responseCode = httpClient.POST(jsonSerial);
-
-        Serial.print("Response Code: ");
-        Serial.println(responseCode);
-
-        if (responseCode == HTTP_CODE_OK)
+        if (statusCode == HTTP_CODE_OK)
         {
             deserializeJson(jsonData, httpClient.getString());
-            String response = jsonData["token"];
-            response.toCharArray(apiToken, response.length());
-            Serial.println(apiToken);
         }
-        else
-        {
-            Serial.println(httpClient.getString());
-        }
+
+        httpClient.getString();
 
         httpClient.end();
     }
+
+    return statusCode;
 }
 
 void mqttReceive(char *topic, byte *payload, unsigned int length)
@@ -280,28 +268,42 @@ void picReceive(char input)
             {
                 if (input == '\n')
                 {
-                    apiEmail[picRecvIndex] = '\0';
+                    picData[picRecvIndex] = '\0';
                     picRecvIndex = 0;
                     picRecvStep++;
+
+                    jsonData.clear();
+                    jsonData["email"] = picData;
                 }
                 else
                 {
-                    apiEmail[picRecvIndex++] = input;
+                    picData[picRecvIndex++] = input;
                 }
             }
             else if (picRecvStep == 3)
             {
                 if (input == '\0')
                 {
-                    apiPassword[picRecvIndex] = '\0';
+                    picData[picRecvIndex] = '\0';
                     picRecvIndex = 0;
                     picRecvStep = 0;
 
-                    apiLogin();
+                    jsonData["password"] = picData;
+
+                    serializeJson(jsonData, jsonSerial);
+
+                    if (apiPost("/auth/user/login", jsonSerial) == 200)
+                    {
+                        String response = jsonData["token"];
+                        response.toCharArray(apiToken, response.length());
+
+                        Serial.println();
+                        Serial.println(apiToken);
+                    }
                 }
                 else
                 {
-                    apiPassword[picRecvIndex++] = input;
+                    picData[picRecvIndex++] = input;
                 }
             }
         }
