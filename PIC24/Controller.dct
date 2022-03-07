@@ -828,6 +828,8 @@ amsk_9
 amsk_9_bit
 amsk_9_i2c1msk_bit
 amsk_9_i2c2msk_bit
+apicreds
+apilogin
 arpt
 arpt_0
 arpt_0_bit

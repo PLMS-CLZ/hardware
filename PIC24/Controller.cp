@@ -1,4 +1,6 @@
 #line 1 "D:/keanu/Documents/GitHub/controller/PIC24/Controller.c"
+const char *apiCreds = "admin@gmail.com\n11111111";
+
 int espStxStatus = 0;
 int espRecvIndex = 0;
 int espRecvStep = 0;
@@ -116,6 +118,17 @@ void WiFiInit()
  }
 
  WiFiConnect(flashData);
+}
+
+void apiLogin()
+{
+
+ UART2_Write_Text("\r\nSTX\nApiLogin\n");
+ Delay_ms(100);
+
+ UART2_Write_Text(apiCreds);
+ Delay_ms(100);
+ UART2_Write('\0');
 }
 
 void gsmReceive(char input)
@@ -425,6 +438,33 @@ void espReceive(char input)
 
  UnitRegister();
 
+ LATB.RB13 = 0;
+ LATB.RB12 = 0;
+ }
+ else
+ {
+ espData[espRecvIndex++] = input;
+ }
+ }
+ }
+ else if (strcmp(espCommand, "ApiLogin") == 0)
+ {
+ LATB.RB13 = 1;
+
+ if (espRecvStep == 2)
+ {
+ if (input == '\0')
+ {
+ espData[espRecvIndex] = '\0';
+ espRecvIndex = 0;
+ espRecvStep = 0;
+
+ LATB.RB12 = 1;
+
+ apiLogin();
+
+ LATB.RB15 = 0;
+ LATB.RB14 = 0;
  LATB.RB13 = 0;
  LATB.RB12 = 0;
  }
