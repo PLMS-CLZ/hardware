@@ -21,17 +21,18 @@ long lastWifiOnUpdate = 0;
 long lastWifiOffUpdate = 0;
 long lastReconnectAttempt = 0;
 
-char apiToken[50];
-
 int picStxStatus = 0;
 int picRecvIndex = 0;
 int picRecvStep = 0;
+
+int statusCode = 0;
 
 char picCommand[50];
 char picData[100];
 
 char ssid[50];
 char password[50];
+char apiToken[50];
 char mqttTopic[50];
 char jsonSerial[1024];
 
@@ -138,28 +139,69 @@ void mqttConnect()
     }
 }
 
-int apiPost(char *apiPath, char *data)
+int apiPatch(char *apiPath, char *data)
 {
-    int statusCode = 0;
-
     std::unique_ptr<BearSSL::WiFiClientSecure> wifiClientSecure(new BearSSL::WiFiClientSecure);
     wifiClientSecure->setInsecure();
 
     httpClient.useHTTP10(true);
+    statusCode = 0;
+
+    Serial.println();
+    Serial.println("API Patch");
+    Serial.println(apiPath);
+
     if (httpClient.begin(*wifiClientSecure, String(apiRoute) + apiPath))
     {
-        httpClient.addHeader("Authorization", apiToken);
+        httpClient.addHeader("Authorization", String("Bearer ") + apiToken);
+        httpClient.addHeader("Accept", "application/json");
+        httpClient.addHeader("Content-Type", "application/json");
+
+        statusCode = httpClient.PATCH(data);
+        Serial.println(statusCode);
+
+        String response = httpClient.getString();
+        Serial.println(response);
+
+        if (statusCode == HTTP_CODE_OK)
+        {
+            deserializeJson(jsonData, response);
+        }
+
+        httpClient.end();
+    }
+
+    return statusCode;
+}
+
+int apiPost(char *apiPath, char *data)
+{
+    std::unique_ptr<BearSSL::WiFiClientSecure> wifiClientSecure(new BearSSL::WiFiClientSecure);
+    wifiClientSecure->setInsecure();
+
+    httpClient.useHTTP10(true);
+    statusCode = 0;
+
+    Serial.println();
+    Serial.println("API Post");
+    Serial.println(apiPath);
+
+    if (httpClient.begin(*wifiClientSecure, String(apiRoute) + apiPath))
+    {
+        httpClient.addHeader("Authorization", String("Bearer ") + apiToken);
         httpClient.addHeader("Accept", "application/json");
         httpClient.addHeader("Content-Type", "application/json");
 
         statusCode = httpClient.POST(data);
+        Serial.println(statusCode);
+
+        String response = httpClient.getString();
+        Serial.println(response);
 
         if (statusCode == HTTP_CODE_OK)
         {
-            deserializeJson(jsonData, httpClient.getString());
+            deserializeJson(jsonData, response);
         }
-
-        httpClient.getString();
 
         httpClient.end();
     }
@@ -295,11 +337,80 @@ void picReceive(char input)
                     if (apiPost("/auth/user/login", jsonSerial) == 200)
                     {
                         String response = jsonData["token"];
-                        response.toCharArray(apiToken, response.length());
+                        response.toCharArray(apiToken, response.length() + 1);
 
                         Serial.println();
                         Serial.println(apiToken);
                     }
+                }
+                else
+                {
+                    picData[picRecvIndex++] = input;
+                }
+            }
+        }
+        else if (strcmp(picCommand, "UnitUpdate") == 0)
+        {
+            if (picRecvStep == 2)
+            {
+                if (input == '\n')
+                {
+                    picData[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
+                    picRecvStep++;
+
+                    jsonData.clear();
+                    jsonData["status"] = String(picData);
+                }
+                else
+                {
+                    picData[picRecvIndex++] = input;
+                }
+            }
+            else if (picRecvStep == 3)
+            {
+                if (input == '\n')
+                {
+                    picData[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
+                    picRecvStep++;
+
+                    jsonData["latitude"] = String(picData).toDouble();
+                }
+                else
+                {
+                    picData[picRecvIndex++] = input;
+                }
+            }
+            else if (picRecvStep == 4)
+            {
+                if (input == '\n')
+                {
+                    picData[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
+                    picRecvStep++;
+
+                    jsonData["longitude"] = String(picData).toDouble();
+                }
+                else
+                {
+                    picData[picRecvIndex++] = input;
+                }
+            }
+            else if (picRecvStep == 5)
+            {
+                if (input == '\0')
+                {
+                    picData[picRecvIndex] = '\0';
+                    picRecvIndex = 0;
+                    picRecvStep = 0;
+
+                    String route = String("/units/") + picData;
+                    route.toCharArray(picData, route.length() + 1);
+
+                    serializeJson(jsonData, jsonSerial);
+
+                    apiPatch(picData, jsonSerial);
                 }
                 else
                 {
