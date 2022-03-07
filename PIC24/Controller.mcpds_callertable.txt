@@ -42,7 +42,7 @@ main
 			FLASH_Write_Compact
 				FLASH_Write_DoWrite
 			UART2_Write_Text
-		UnitRegisterResponse
+		UnitUpdate
 			UART2_Write_Text
 			UART2_Write
 		MessageSent

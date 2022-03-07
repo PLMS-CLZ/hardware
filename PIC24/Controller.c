@@ -33,20 +33,17 @@ void UnitRegister()
     UART1_Write_Text("PLMS-UnitRegister-CLZ\x1A");
 }
 
-void UnitRegisterResponse()
+void UnitUpdate()
 {
     // Command
-    UART2_Write_Text("\r\nSTX\nMqttPublish\n");
-    Delay_ms(100);
-    // Topic
-    UART2_Write_Text("PLMS-UnitRegisterResponse-CLZ\n");
+    UART2_Write_Text("\r\nSTX\nUnitUpdate\n");
     Delay_ms(100);
     // Data
-    UART2_Write_Text(gsmSender);
+    UART2_Write_Text(gsmData);
     Delay_ms(100);
     UART2_Write('\n');
     Delay_ms(100);
-    UART2_Write_Text(gsmData);
+    UART2_Write_Text(gsmSender);
     Delay_ms(100);
     UART2_Write('\0');
 }
@@ -283,7 +280,7 @@ void gsmReceive(char input)
                         }
                     }
                 }
-                else if (strcmp(gsmCommand, "PLMS-UnitRegisterResponse-CLZ") == 0)
+                else if (strcmp(gsmCommand, "PLMS-UnitUpdate-CLZ") == 0)
                 {
                     LATB.RB13 = 1;
 
@@ -298,7 +295,7 @@ void gsmReceive(char input)
 
                             LATB.RB12 = 1;
 
-                            UnitRegisterResponse();
+                            UnitUpdate();
 
                             LATB.RB15 = 0;
                             LATB.RB14 = 0;
