@@ -4,7 +4,7 @@
   "name": "Controller",
   "content": "",
   "created_at": "2022-03-08 17:15:46",
-  "updated_at": "2022-03-09 20:32:22",
+  "updated_at": "2022-03-09 22:23:00",
   "stick": "",
   "documents": [
     {
@@ -274,7 +274,6 @@
       "master": "",
       "thumb": "/images/thumb-default.png",
       "components": {
-        "557c105168d444a992e25584f55bcbb2": 1,
         "cfe950ec69d74bbd96d22dc30b4489ef": 1,
         "54c5149259a64cb59bfbecef9a083e4f": 1,
         "563433962e2240c4aaf3e53244e8e7e0": 1,
@@ -287,14 +286,15 @@
         "0505a9c8877c4ce29a9e8248a578b9e7": 1,
         "182636cd88484b0e8eca2b5e5ff2507e": 1,
         "5f3fc375621743b3962b2dafd37acf79": 1,
-        "33d1f1238bee43ab9c77e28b534b1fba": 1
+        "33d1f1238bee43ab9c77e28b534b1fba": 1,
+        "557c105168d444a992e25584f55bcbb2": 1
       },
       "BOM": [],
-      "updateTime": 1646829142,
+      "updateTime": 1646835780,
       "createTime": 1646738626,
       "histories": [],
       "created_at": "2022-03-08 19:23:46",
-      "updated_at": "2022-03-09 20:32:22"
+      "updated_at": "2022-03-09 22:23:00"
     }
   ],
   "sort": [],
