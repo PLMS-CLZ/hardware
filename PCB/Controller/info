@@ -1,0 +1,305 @@
+{
+  "uuid": "14c63da3dafe70ff2c163d807f46ea0f",
+  "path": "Offline/Controller",
+  "name": "Controller",
+  "content": "",
+  "created_at": "2022-03-08 17:15:46",
+  "updated_at": "2022-03-09 20:32:22",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "eb118b6f4379cdd5d9bacc6e41912195",
+      "title": "Sheet_1",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "034194b8dada45738f9faa414d273d7b": 1,
+        "404529c893534f7ea520c1b9004998b8": 1,
+        "8eec26348e684aea9f1de9936d17ff50": 3,
+        "db6070260bf04c3892d18ae7632b3be7": 2,
+        "7e36471514d74be6824b7693684869f8": 1,
+        "b0248eb51e084227889f2cb84eab79c4": 2,
+        "18479f1c4d4749c5a4c4387846c5d657": 1,
+        "24eeb2ceca08480b92b847b6a310acda": 1,
+        "a7a0e276dadd4f8097422d2afc2e1b9c": 1,
+        "32220618b94c44499a71ec657fe401c9": 1,
+        "bacf5553da266925c44144ce5fdc0a97": 1,
+        "709aad62feb1493dbad958130998d59e": 1,
+        "58f496743fab47fc997dacedc92ae92b": 1,
+        "794a4427ac5c440a9e1d91f22b1b001f": 1,
+        "43d05a2b58d64b67ab259860d7920671": 1
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "18650-X2S-CASE",
+          1,
+          "18650-X2S",
+          "B1",
+          {
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "18650-X2S",
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "puuid": "5f3fc375621743b3962b2dafd37acf79",
+            "uuid": "794a4427ac5c440a9e1d91f22b1b001f"
+          }
+        ],
+        [
+          "0.1u",
+          1,
+          "CAP-D5.0XF2.0",
+          "C1",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "4f22f638eb46492797daf7383bd865c4",
+            "uuid": "24eeb2ceca08480b92b847b6a310acda"
+          }
+        ],
+        [
+          "10u",
+          1,
+          "CAP-D5.0XF2.0",
+          "C2",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "4f22f638eb46492797daf7383bd865c4",
+            "uuid": "a7a0e276dadd4f8097422d2afc2e1b9c"
+          }
+        ],
+        [
+          "5T1A 250V",
+          1,
+          "FUSE-TH_BD5.8-L22.5-P26.50-D0.7",
+          "F1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C140519",
+            "BOM_Manufacturer": "XC Elec(Shenzhen)",
+            "BOM_Manufacturer Part": "5T1A 250V",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "0505a9c8877c4ce29a9e8248a578b9e7",
+            "uuid": "709aad62feb1493dbad958130998d59e"
+          }
+        ],
+        [
+          "M02",
+          1,
+          "SCREWTERMINAL-5MM-2",
+          "JP1",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "182636cd88484b0e8eca2b5e5ff2507e",
+            "uuid": "58f496743fab47fc997dacedc92ae92b"
+          }
+        ],
+        [
+          "K4-6×6_TH",
+          1,
+          "KEY-TH_4P-L6.0-W6.0-P4.50-LS6.5",
+          "KEY1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C136684",
+            "BOM_Manufacturer": "韩国韩荣",
+            "BOM_Manufacturer Part": "K2-1102DP-E4SW-04",
+            "puuid": "557c105168d444a992e25584f55bcbb2",
+            "uuid": "18479f1c4d4749c5a4c4387846c5d657"
+          }
+        ],
+        [
+          "Header-Female-2.54_1x8",
+          1,
+          "HDR-TH_8P-P2.54-V-F-1",
+          "P1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "BOOMELE",
+            "BOM_Manufacturer Part": "Female headerHDR1X8-2.54",
+            "BOM_Supplier Part": "C27438",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "366e1b46b2ba4833900571d9613df11d",
+            "uuid": "bacf5553da266925c44144ce5fdc0a97"
+          }
+        ],
+        [
+          "10k",
+          1,
+          "RC05",
+          "R1",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "793a7ee4ccbb44b88244b14887b98e17",
+            "uuid": "b0248eb51e084227889f2cb84eab79c4"
+          }
+        ],
+        [
+          "470",
+          1,
+          "RC05",
+          "R2",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "793a7ee4ccbb44b88244b14887b98e17",
+            "uuid": "b0248eb51e084227889f2cb84eab79c4"
+          }
+        ],
+        [
+          "SIM800L_1",
+          1,
+          "SIM800L",
+          "T1",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "cfe950ec69d74bbd96d22dc30b4489ef",
+            "uuid": "7e36471514d74be6824b7693684869f8"
+          }
+        ],
+        [
+          "Terminal_Block_2-Pin_5.08mm",
+          1,
+          "TERMINAL_BLOCK_2-PIN_5.08",
+          "T2",
+          {
+            "BOM_Manufacturer": "Excellway",
+            "BOM_Manufacturer Part": "",
+            "BOM_Supplier": "",
+            "BOM_Supplier Part": "DR55-8-Pin-5.08mm",
+            "puuid": "54c5149259a64cb59bfbecef9a083e4f",
+            "uuid": "32220618b94c44499a71ec657fe401c9"
+          }
+        ],
+        [
+          "PIC24FJ32GA002-I/SP",
+          1,
+          "SPDIP-28_L34.7-W7.2-P2.54-LS7.9-BL",
+          "U1",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C643615",
+            "BOM_Manufacturer": "Microchip Tech",
+            "BOM_Manufacturer Part": "PIC24FJ32GA002-I/SP",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "563433962e2240c4aaf3e53244e8e7e0",
+            "uuid": "034194b8dada45738f9faa414d273d7b"
+          }
+        ],
+        [
+          "NODEMCU V3 COPY",
+          1,
+          "NODEMCU_V3",
+          "U2",
+          {
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "puuid": "c10b9989fcf044198087349e1c32abef",
+            "uuid": "404529c893534f7ea520c1b9004998b8"
+          }
+        ],
+        [
+          "bms 2s",
+          1,
+          "BMS 2S",
+          "U3",
+          {
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "puuid": "33d1f1238bee43ab9c77e28b534b1fba",
+            "uuid": "43d05a2b58d64b67ab259860d7920671"
+          }
+        ],
+        [
+          "LM2596_DC",
+          3,
+          "LM2596_DC",
+          "U4,U5,U9",
+          {
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "LM2596 DC 5V",
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "puuid": "49041ba85a2f4c5daa5244975828f4a2",
+            "uuid": "8eec26348e684aea9f1de9936d17ff50"
+          }
+        ],
+        [
+          "HLK-PM12",
+          2,
+          "PWRM-TH_HLK-PM12",
+          "U6,U7",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Supplier Part": "C209905",
+            "BOM_Manufacturer": "HI-LINK",
+            "BOM_Manufacturer Part": "HLK-PM12",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "f438ee5e35d643358afc259047223cdb",
+            "uuid": "db6070260bf04c3892d18ae7632b3be7"
+          }
+        ]
+      ],
+      "updateTime": 1646826771,
+      "createTime": 1646730947,
+      "histories": [],
+      "created_at": "2022-03-08 17:15:47",
+      "updated_at": "2022-03-09 19:52:51"
+    },
+    {
+      "uuid": "887356cafb57b44c3b4f890fcf239efe",
+      "puuid": "14c63da3dafe70ff2c163d807f46ea0f",
+      "title": "PCB_Controller",
+      "filename": "PCB_Controller.json",
+      "description": "",
+      "docType": "3",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "557c105168d444a992e25584f55bcbb2": 1,
+        "cfe950ec69d74bbd96d22dc30b4489ef": 1,
+        "54c5149259a64cb59bfbecef9a083e4f": 1,
+        "563433962e2240c4aaf3e53244e8e7e0": 1,
+        "c10b9989fcf044198087349e1c32abef": 1,
+        "49041ba85a2f4c5daa5244975828f4a2": 3,
+        "f438ee5e35d643358afc259047223cdb": 2,
+        "793a7ee4ccbb44b88244b14887b98e17": 2,
+        "4f22f638eb46492797daf7383bd865c4": 2,
+        "366e1b46b2ba4833900571d9613df11d": 1,
+        "0505a9c8877c4ce29a9e8248a578b9e7": 1,
+        "182636cd88484b0e8eca2b5e5ff2507e": 1,
+        "5f3fc375621743b3962b2dafd37acf79": 1,
+        "33d1f1238bee43ab9c77e28b534b1fba": 1
+      },
+      "BOM": [],
+      "updateTime": 1646829142,
+      "createTime": 1646738626,
+      "histories": [],
+      "created_at": "2022-03-08 19:23:46",
+      "updated_at": "2022-03-09 20:32:22"
+    }
+  ],
+  "sort": [],
+  "title": "Controller",
+  "foldername": "Controller",
+  "schfilename": "Controller.json",
+  "schfilemtime": 1646826771887
+}
