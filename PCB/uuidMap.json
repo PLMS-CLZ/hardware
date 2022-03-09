@@ -1,5 +1,8 @@
 {
   "14c63da3dafe70ff2c163d807f46ea0f": "Controller",
   "eb118b6f4379cdd5d9bacc6e41912195": "Controller\\Controller.json?Sheet_1",
-  "887356cafb57b44c3b4f890fcf239efe": "Controller\\PCB_Controller.json"
+  "887356cafb57b44c3b4f890fcf239efe": "Controller\\PCB_Controller.json",
+  "4831bf3128868ea1087a5831693f2ec3": "Detector",
+  "adf76a2fc29ba90a7eefed5f4f75290e": "Detector\\Detector.json?Sheet_1",
+  "30588f3e6cdf663fa2d0e4e4880fdcca": "Detector\\PCB_Detector.json"
 }
