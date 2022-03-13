@@ -486,10 +486,10 @@ void main()
 {
     // Configure Peripherals
     Unlock_IOLOCK();
-    PPS_Mapping_NoLock(9, _INPUT, _U1RX);  // GSM RX
-    PPS_Mapping_NoLock(8, _OUTPUT, _U1TX); // GSM TX
-    PPS_Mapping_NoLock(7, _INPUT, _U2RX);  // NodeMCU RX
-    PPS_Mapping_NoLock(6, _OUTPUT, _U2TX); // NodeMCU TX
+    PPS_Mapping_NoLock(9, _INPUT, _U2RX);  // NodeMCU RX
+    PPS_Mapping_NoLock(8, _OUTPUT, _U2TX); // NodeMCU TX
+    PPS_Mapping_NoLock(7, _INPUT, _U1RX);  // GSM RX
+    PPS_Mapping_NoLock(6, _OUTPUT, _U1TX); // GSM TX
     Lock_IOLOCK();
 
     // Configure Ports
@@ -499,8 +499,8 @@ void main()
     TRISB.RB12 = 0;
 
     // Configure UART
-    UART1_Init(9600); // GSM
-    UART2_Init(9600); // NodeMCU
+    UART1_Init(9600); // NodeMCU
+    UART2_Init(9600); // GSM
 
     // LED Test
     LATB.RB15 = 0;
