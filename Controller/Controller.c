@@ -30,7 +30,11 @@ void UnitRegister()
     UART1_Write_Text("\"\r");
     Delay_ms(100);
     // Data
-    UART1_Write_Text("PLMS-UnitRegister-CLZ\x1A");
+    UART1_Write_Text("PLMS-UnitRegister-CLZ\n");
+    Delay_ms(100);
+    UART1_Write_Text("-========CLZ========-");
+    Delay_ms(100);
+    UART1_Write('\x1A');
 }
 
 void UnitUpdate()
