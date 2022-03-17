@@ -334,7 +334,7 @@ void picReceive(char input)
 
                     serializeJson(jsonData, jsonSerial);
 
-                    if (apiPost("/auth/user/login", jsonSerial) == 200)
+                    if (apiPost("/user/login", jsonSerial) == 200)
                     {
                         String response = jsonData["token"];
                         response.toCharArray(apiToken, response.length() + 1);
