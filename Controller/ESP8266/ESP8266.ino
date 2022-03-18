@@ -375,7 +375,7 @@ void picReceive(char input)
                     picRecvIndex = 0;
                     picRecvStep++;
 
-                    jsonData["latitude"] = String(picData).toDouble();
+                    jsonData["location"] = String(picData);
                 }
                 else
                 {
@@ -383,21 +383,6 @@ void picReceive(char input)
                 }
             }
             else if (picRecvStep == 4)
-            {
-                if (input == '\n')
-                {
-                    picData[picRecvIndex] = '\0';
-                    picRecvIndex = 0;
-                    picRecvStep++;
-
-                    jsonData["longitude"] = String(picData).toDouble();
-                }
-                else
-                {
-                    picData[picRecvIndex++] = input;
-                }
-            }
-            else if (picRecvStep == 5)
             {
                 if (input == '\0')
                 {
