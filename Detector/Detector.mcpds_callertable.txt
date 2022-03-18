@@ -23,6 +23,9 @@ main
 		UART1_Write
 	UART2_Write_Text
 		UART2_Write
+	UART2_Data_Ready
+	gpsReceive
+	UART2_Read
 	ControllerInit
 		FLASH_Read_Compact
 	UART1_Read_Text
@@ -32,6 +35,7 @@ main
 	gsmReceive
 		strcmp
 		ControllerSave
+			strcpy
 			FLASH_Erase
 				FLASH_Write_DoWrite
 					KeySequence
@@ -39,34 +43,6 @@ main
 				FLASH_Write_DoWrite
 		UnitUpdate
 			strlen
-			FloatToStr
-				strcpy
-				_Compare_Le_Fp
-					_Compare_Fp
-				_Mul_FP
-				_Compare_Ge_Fp
-					_Compare_Fp
 			UART1_Write_Text
 			UART1_Write
 	UART1_Read
-	UART2_Data_Ready
-	gpsReceive
-		parseGPS
-			strlen
-			memcpy
-			atoi
-				isdigit
-			atof
-				strtod
-					isspace
-					isdigit
-					_Multiply_32x32
-					_Long2Float
-					_Compare_Le_Fp
-					_Mul_FP
-					_Compare_Ge_Fp
-			_Div_FP
-			_Long2Float
-			_AddSub_FP
-		strcmp
-	UART2_Read

@@ -1715,9 +1715,8 @@ gcstat_i2c2stat_bit
 get_fosc_khz
 get_fosc_per_cyc
 gpsdata
-gpslatitude
-gpslongitude
 gpsreceive
+gpsreceived
 gpsrecvindex
 gpsrecvstep
 gpsstxstatus
@@ -3661,7 +3660,6 @@ p_i2c1stat_bit
 p_i2c2stat_bit
 padcfg1
 padcfg1bits
-parsegps
 pcfg0
 pcfg0
 pcfg0_ad1pcfg_bit

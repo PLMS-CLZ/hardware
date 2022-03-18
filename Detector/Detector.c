@@ -1,6 +1,7 @@
 int gpsStxStatus = 0;
 int gpsRecvIndex = 0;
 int gpsRecvStep = 0;
+int gpsReceived = 0;
 
 int gsmStxStatus = 0;
 int gsmRecvIndex = 0;
@@ -16,11 +17,11 @@ char gsmData[200];
 char controllerNumber[20];
 
 int status = 0;
-float gpsLatitude;
-float gpsLongitude;
 
 void ControllerSave(char *controller)
 {
+    strcpy(controllerNumber, controller);
+
     FLASH_Erase(0x4400);
     Delay_ms(100);
     FLASH_Write_Compact(0x4480, controller);
@@ -46,7 +47,7 @@ void ControllerInit()
 
 void UnitUpdate()
 {
-    char *_status, _gpsLatitude[20], _gpsLongitude[20];
+    char *_status;
 
     // Check
     if (strlen(controllerNumber) == 0)
@@ -56,8 +57,6 @@ void UnitUpdate()
 
     // Process
     _status = (status == 0) ? "fault" : "normal";
-    FloatToStr(gpsLatitude, _gpsLatitude);
-    FloatToStr(gpsLongitude, _gpsLongitude);
 
     // Command
     UART1_Write_Text("\r\nAT+CMGS=\"");
@@ -72,37 +71,11 @@ void UnitUpdate()
     Delay_ms(100);
     UART1_Write_Text(_status);
     Delay_ms(100);
-    UART1_Write('\n');
+    UART1_Write_Text("\n$GPRMC,");
     Delay_ms(100);
-    UART1_Write_Text(_gpsLatitude);
-    Delay_ms(100);
-    UART1_Write('\n');
-    Delay_ms(100);
-    UART1_Write_Text(_gpsLongitude);
+    UART1_Write_Text(gpsData);
     Delay_ms(100);
     UART1_Write('\x1A');
-}
-
-float parseGPS(const char *position)
-{
-    float degrees = 0;
-
-    if (strlen(position) > 5)
-    {
-        char degreesPart[4];
-        int degreesCount = position[4] == '.' ? 2 : 3;
-
-        memcpy(degreesPart, position, degreesCount);
-        degreesPart[degreesCount] = 0;
-
-        // Move pointer to minutes part
-        position += degreesCount;
-
-        // add degrees and minutes
-        degrees = atoi(degreesPart) + atof(position) / 60.0;
-    }
-
-    return degrees;
 }
 
 void gsmReceive(char input)
@@ -143,10 +116,7 @@ void gsmReceive(char input)
         // proceed to step 1
         gsmRecvStep = 1;
 
-        LATB.RB15 = 1;
-        LATB.RB14 = 0;
-        LATB.RB13 = 0;
-        LATB.RB12 = 0;
+        LATB.RB14 = 1;
     }
     else if (input == '"' && gsmRecvStep == 1)
     {
@@ -199,7 +169,7 @@ void gsmReceive(char input)
             gsmRecvIndex = 0;
             gsmRecvStep++;
 
-            LATB.RB14 = 1;
+            LATB.RB13 = 1;
         }
         else
         {
@@ -210,27 +180,27 @@ void gsmReceive(char input)
     {
         if (strcmp(gsmCommand, "PLMS-UnitRegister-CLZ") == 0)
         {
-            LATB.RB13 = 1;
+            LATB.RB12 = 1;
 
             if (gsmRecvStep == 9)
             {
                 if (input == '\r')
                 {
+                    LATB.RB11 = 1;
+
                     gsmData[gsmRecvIndex] = '\0';
                     gsmRecvIndex = 0;
                     gsmRecvStep = 0;
 
-                    LATB.RB12 = 1;
-
                     ControllerSave(gsmSender);
 
-                    LATB.RB15 = 0;
                     LATB.RB14 = 0;
+                    LATB.RB13 = 0;
 
                     UnitUpdate();
 
-                    LATB.RB13 = 0;
                     LATB.RB12 = 0;
+                    LATB.RB11 = 0;
                 }
                 else
                 {
@@ -238,27 +208,27 @@ void gsmReceive(char input)
                 }
             }
         }
-        if (strcmp(gsmCommand, "PLMS-UnitUpdate-CLZ") == 0)
+        else if (strcmp(gsmCommand, "PLMS-UnitUpdate-CLZ") == 0)
         {
-            LATB.RB13 = 1;
+            LATB.RB12 = 1;
 
             if (gsmRecvStep == 9)
             {
                 if (input == '\r')
                 {
+                    LATB.RB11 = 1;
+
                     gsmData[gsmRecvIndex] = '\0';
                     gsmRecvIndex = 0;
                     gsmRecvStep = 0;
 
-                    LATB.RB12 = 1;
-
                     if (strcmp(controllerNumber, gsmSender) == 0)
                         UnitUpdate();
 
-                    LATB.RB15 = 0;
                     LATB.RB14 = 0;
                     LATB.RB13 = 0;
                     LATB.RB12 = 0;
+                    LATB.RB11 = 0;
                 }
                 else
                 {
@@ -270,10 +240,10 @@ void gsmReceive(char input)
         {
             gsmRecvStep = 0;
 
-            LATB.RB15 = 0;
             LATB.RB14 = 0;
             LATB.RB13 = 0;
             LATB.RB12 = 0;
+            LATB.RB11 = 0;
         }
     }
 }
@@ -292,19 +262,19 @@ void gpsReceive(char input)
     {
         gpsStxStatus++;
     }
-    else if (gpsStxStatus == 3 && input == 'G')
+    else if (gpsStxStatus == 3 && input == 'R')
     {
         gpsStxStatus++;
     }
-    else if (gpsStxStatus == 4 && input == 'L')
+    else if (gpsStxStatus == 4 && input == 'M')
     {
         gpsStxStatus++;
     }
-    else if (gpsStxStatus == 5 && input == 'L')
+    else if (gpsStxStatus == 5 && input == 'C')
     {
         gpsStxStatus++;
     }
-    else if (gpsStxStatus == 5 && input == ',')
+    else if (gpsStxStatus == 6 && input == ',')
     {
         gpsStxStatus++;
     }
@@ -313,7 +283,7 @@ void gpsReceive(char input)
         gpsStxStatus = 0;
     }
 
-    if (gpsStxStatus == 6)
+    if (gpsStxStatus == 7)
     {
         // reset stx status
         gpsStxStatus = 0;
@@ -327,67 +297,15 @@ void gpsReceive(char input)
     else if (gpsRecvStep == 1)
     {
         // Latitude
-        if (input == ',')
+        if (input == '\r')
         {
-            gpsData[gpsRecvIndex] = '\0';
-            gpsRecvIndex = 0;
-            gpsRecvStep++;
+            gpsData[gpsRecvIndex++] = '\0';
 
-            gpsLatitude = parseGPS(gpsData);
-        }
-        else
-        {
-            gpsData[gpsRecvIndex++] = input;
-        }
-    }
-    else if (gpsRecvStep == 2)
-    {
-        // Latitude Direction
-        if (input == ',')
-        {
-            gpsData[gpsRecvIndex] = '\0';
-            gpsRecvIndex = 0;
-            gpsRecvStep++;
+            if (gpsRecvIndex > 50)
+                gpsReceived = 1;
 
-            if (strcmp(gpsData, 'S') == 0)
-            {
-                gpsLatitude = -gpsLatitude;
-            }
-        }
-        else
-        {
-            gpsData[gpsRecvIndex++] = input;
-        }
-    }
-    else if (gpsRecvStep == 3)
-    {
-        // Latitude
-        if (input == ',')
-        {
-            gpsData[gpsRecvIndex] = '\0';
-            gpsRecvIndex = 0;
-            gpsRecvStep++;
-
-            gpsLongitude = parseGPS(gpsData);
-        }
-        else
-        {
-            gpsData[gpsRecvIndex++] = input;
-        }
-    }
-    else if (gpsRecvStep == 4)
-    {
-        // Latitude Direction
-        if (input == ',')
-        {
-            gpsData[gpsRecvIndex] = '\0';
             gpsRecvIndex = 0;
             gpsRecvStep = 0;
-
-            if (strcmp(gpsData, 'W') == 0)
-            {
-                gpsLongitude = -gpsLongitude;
-            }
         }
         else
         {
@@ -411,6 +329,8 @@ void main()
     TRISB.RB14 = 0;
     TRISB.RB13 = 0;
     TRISB.RB12 = 0;
+    TRISB.RB11 = 0;
+    TRISB.RB10 = 0; // GPS Enable
 
     // Configure UART
     UART1_Init(9600); // GPS
@@ -421,17 +341,30 @@ void main()
     LATB.RB14 = 0;
     LATB.RB13 = 0;
     LATB.RB12 = 0;
+    LATB.RB11 = 0;
+    LATB.RB10 = 0;
     Delay_ms(5000);
     LATB.RB15 = 1;
     LATB.RB14 = 1;
     LATB.RB13 = 1;
     LATB.RB12 = 1;
+    LATB.RB11 = 1;
 
     // UART Ready
     UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
-    Delay_ms(100);
     UART2_Write_Text("\r\nPIC UART2 Ready!\r\n");
-    Delay_ms(30000);
+
+    // Initialize GPS
+    LATB.RB10 = 1;
+    do
+    {
+        if (UART2_Data_Ready())
+        {
+            gpsReceive(UART2_Read());
+        }
+    } while (gpsReceived == 0);
+    LATB.RB10 = 0;
+    UART2_Write_Text(gpsData);
 
     // Initialize Controller
     ControllerInit();
@@ -439,27 +372,22 @@ void main()
     // Setup GSM
     UART1_Write_Text("ATE0\r\n");
     UART1_Read_Text(gsmCommand, "OK", 255);
-    LATB.RB12 = 0;
+    LATB.RB14 = 0;
     UART1_Write_Text("AT+CMGD=1,4\r\n");
     UART1_Read_Text(gsmCommand, "OK", 255);
     LATB.RB13 = 0;
     UART1_Write_Text("AT+CNMI=3,2,0,1,1\r\n");
     UART1_Read_Text(gsmCommand, "OK", 255);
-    LATB.RB14 = 0;
+    LATB.RB12 = 0;
     UART1_Write_Text("AT+CMGF=1\r\n");
     UART1_Read_Text(gsmCommand, "OK", 255);
-    LATB.RB15 = 0;
+    LATB.RB11 = 0;
 
     while (1)
     {
         if (UART1_Data_Ready())
         {
             gsmReceive(UART1_Read());
-        }
-
-        if (UART2_Data_Ready())
-        {
-            gpsReceive(UART2_Read());
         }
     }
 }

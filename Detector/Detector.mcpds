@@ -41,13 +41,13 @@ Count=0
 [PLDS]
 Count=0
 [Useses]
-File0=C_String
-File1=FLASH
-File2=Peripheral_Pin_Select
-File3=UART
-File4=C_Stdlib
-File5=Conversions
-File6=C_Type
+File0=UART
+File1=Peripheral_Pin_Select
+File2=FLASH
+File3=C_Type
+File4=C_String
+File5=C_Stdlib
+File6=Conversions
 Count=7
 [EXPANDED_NODES]
 0=Detector.mcpds
@@ -56,5 +56,5 @@ Count=2
 [LIB_EXPANDED_NODES]
 0=mikroE Libraries
 1=System Libraries
-311=Peripheral_Pin_Select
-Count=4
+107=C_String
+Count=3
