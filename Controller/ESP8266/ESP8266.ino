@@ -70,11 +70,7 @@ void loop()
         }
         else
         {
-            Serial.print("Connecting to ");
-            Serial.print(ssid);
-            Serial.print(" ");
-            Serial.print(password);
-            Serial.println("...");
+            Serial.println("Connecting to MQTT...");
 
             mqttConnect();
         }
@@ -295,6 +291,11 @@ void picReceive(char input)
                     picRecvIndex = 0;
                     picRecvStep = 0;
 
+                    Serial.println("Connecting to WiFi: ");
+                    Serial.print(ssid);
+                    Serial.print(" ");
+                    Serial.println(password);
+
                     // connect to wifi
                     WiFi.begin(ssid, password);
                 }
@@ -329,6 +330,8 @@ void picReceive(char input)
                     picData[picRecvIndex] = '\0';
                     picRecvIndex = 0;
                     picRecvStep = 0;
+
+                    Serial.println("Logging into API...");
 
                     jsonData["password"] = picData;
 
@@ -390,6 +393,8 @@ void picReceive(char input)
                     picRecvIndex = 0;
                     picRecvStep = 0;
 
+                    Serial.println("Updating Unit...");
+
                     String route = String("/units/") + picData;
                     route.toCharArray(picData, route.length() + 1);
 
@@ -425,6 +430,8 @@ void picReceive(char input)
                     picData[picRecvIndex] = '\0';
                     picRecvIndex = 0;
                     picRecvStep = 0;
+
+                    Serial.println("Publishing into MQTT...");
 
                     mqttClient.publish(mqttTopic, picData);
                 }
