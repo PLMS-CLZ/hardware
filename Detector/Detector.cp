@@ -302,7 +302,7 @@ void gpsReceive(char input)
  {
  gpsData[gpsRecvIndex++] = '\0';
 
- if (gpsRecvIndex > 50)
+ if (gpsRecvIndex > 60)
  gpsReceived = 1;
 
  gpsRecvIndex = 0;
