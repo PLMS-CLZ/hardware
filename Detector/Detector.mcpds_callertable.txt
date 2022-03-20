@@ -23,16 +23,19 @@ main
 		UART1_Write
 	UART2_Write_Text
 		UART2_Write
-	UART2_Data_Ready
-	gpsReceive
-	UART2_Read
-	ControllerInit
-		FLASH_Read_Compact
+	getGPS
+		UART2_Data_Ready
+		gpsReceive
+		UART2_Read
+	UART2_Write
 	UART1_Read_Text
 		UART1_Data_Ready
 		UART1_Read
+	ControllerInit
+		FLASH_Read_Compact
 	UART1_Data_Ready
 	gsmReceive
+		UART2_Write
 		strcmp
 		ControllerSave
 			strcpy
@@ -41,8 +44,10 @@ main
 					KeySequence
 			FLASH_Write_Compact
 				FLASH_Write_DoWrite
+			UART2_Write_Text
 		UnitUpdate
 			strlen
+			UART2_Write_Text
 			UART1_Write_Text
 			UART1_Write
 	UART1_Read

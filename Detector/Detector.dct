@@ -1714,6 +1714,7 @@ gcstat_i2c1stat_bit
 gcstat_i2c2stat_bit
 get_fosc_khz
 get_fosc_per_cyc
+getgps
 gpsdata
 gpsreceive
 gpsreceived
@@ -5076,6 +5077,7 @@ spre1
 spre1
 spre2
 spre2
+sprintf
 sr
 srand
 srbits
