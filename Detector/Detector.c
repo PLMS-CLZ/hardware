@@ -5,6 +5,7 @@ int gpsReceived = 0;
 char gpsData[100];
 
 int gsmStxStatus = 0;
+int gsmRecvType = 0; // Type 1 = Text Received; Type 2 = Text Result
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
 char gsmSender[50];
@@ -16,15 +17,15 @@ char controllerNumber[20];
 
 int status = 0;
 
-void ControllerSave(char *controller)
+void ControllerSave()
 {
     LATB.RB12 = 0;
 
-    strcpy(controllerNumber, controller);
+    strcpy(controllerNumber, gsmSender);
 
     FLASH_Erase(0x4400);
     Delay_ms(100);
-    FLASH_Write_Compact(0x4480, controller);
+    FLASH_Write_Compact(0x4480, gsmSender);
 
     LATB.RB12 = 1;
 
@@ -53,6 +54,7 @@ void ControllerInit()
 
 void UnitUpdate()
 {
+    int i;
     char *_status;
 
     // Check
@@ -69,11 +71,10 @@ void UnitUpdate()
     // Command
     UART1_Write_Text("\r\nAT+CMGS=\"");
     Delay_ms(100);
-    // Receiver
     UART1_Write_Text(controllerNumber);
     Delay_ms(100);
     UART1_Write_Text("\"\r");
-    Delay_ms(100);
+    UART1_Read_Text(gsmData, ">", 255);
     // Data
     UART1_Write_Text("PLMS-UnitUpdate-CLZ\n");
     Delay_ms(100);
@@ -81,8 +82,14 @@ void UnitUpdate()
     Delay_ms(100);
     UART1_Write_Text("\n$GPRMC,");
     Delay_ms(100);
-    UART1_Write_Text(gpsData);
-    Delay_ms(100);
+    for (i = 0; i < 100; i++)
+    {
+        if (gpsData[i] == '\0')
+            break;
+
+        UART1_Write(gpsData[i]);
+        Delay_ms(20);
+    }
     UART1_Write('\x1A');
 
     LATB.RB10 = 1;
@@ -90,9 +97,8 @@ void UnitUpdate()
 
 void gsmReceive(int input)
 {
-    if (input < 0) return;
-
-    UART2_Write(input);
+    if (input < 0)
+        return;
 
     if (input == '+')
     {
@@ -106,11 +112,25 @@ void gsmReceive(int input)
     {
         gsmStxStatus++;
     }
-    else if (gsmStxStatus == 3 && input == 'T')
+    else if (gsmStxStatus == 3 && (input == 'T' || input == 'G'))
+    {
+        if (input == 'T')
+        {
+            gsmRecvType = 1;
+        }
+        else if (input == 'G')
+        {
+            gsmRecvType = 2;
+        }
+
+        gsmRecvStep = 0;
+        gsmStxStatus++;
+    }
+    else if (gsmStxStatus == 4 && ((gsmRecvType == 1 && input == ':') || (gsmRecvType == 2 && input == 'S')))
     {
         gsmStxStatus++;
     }
-    else if (gsmStxStatus == 4 && input == ':')
+    else if (gsmStxStatus == 5 && gsmRecvType == 2 && input == ':')
     {
         gsmStxStatus++;
     }
@@ -119,7 +139,7 @@ void gsmReceive(int input)
         gsmStxStatus = 0;
     }
 
-    if (gsmStxStatus == 5)
+    if ((gsmStxStatus == 5 && gsmRecvType == 1) || (gsmStxStatus == 6 && gsmRecvType == 2))
     {
         // reset stx status
         gsmStxStatus = 0;
@@ -132,117 +152,156 @@ void gsmReceive(int input)
 
         LATB.RB11 = 1;
     }
-    else if (input == '"' && gsmRecvStep == 1)
+    else if (gsmRecvStep >= 1)
     {
-        gsmRecvStep++;
-    }
-    else if (gsmRecvStep == 2)
-    {
-        if (input == '"')
+        if (gsmRecvType == 1)
         {
-            // add terminating char
-            gsmSender[gsmRecvIndex] = '\0';
+            // CMT Region (Text Messages received by GSM)
 
-            // reset index
-            gsmRecvIndex = 0;
-
-            // proceed to next step
-            gsmRecvStep++;
-        }
-        else
-        {
-            gsmSender[gsmRecvIndex++] = input;
-        }
-    }
-    else if (input == '"' && gsmRecvStep >= 3 && gsmRecvStep <= 5)
-    {
-        gsmRecvStep++;
-    }
-    else if (gsmRecvStep == 6)
-    {
-        if (input == '"')
-        {
-            gsmDatetime[gsmRecvIndex] = '\0';
-            gsmRecvIndex = 0;
-            gsmRecvStep++;
-        }
-        else
-        {
-            gsmDatetime[gsmRecvIndex++] = input;
-        }
-    }
-    else if (input == '\n' && gsmRecvStep == 7)
-    {
-        gsmRecvStep++;
-    }
-    else if (gsmRecvStep == 8)
-    {
-        if (input == '\n')
-        {
-            gsmCommand[gsmRecvIndex] = '\0';
-            gsmRecvIndex = 0;
-            gsmRecvStep++;
-        }
-        else
-        {
-            gsmCommand[gsmRecvIndex++] = input;
-        }
-    }
-    else if (gsmRecvStep >= 9)
-    {
-        if (strcmp(gsmCommand, "PLMS-UnitRegister-CLZ") == 0)
-        {
-            if (gsmRecvStep == 9)
+            if (input == '"' && gsmRecvStep == 1)
             {
-                if (input == '\r')
+                gsmRecvStep++;
+            }
+            else if (gsmRecvStep == 2)
+            {
+                if (input == '"')
                 {
-                    gsmData[gsmRecvIndex] = '\0';
+                    // add terminating char
+                    gsmSender[gsmRecvIndex] = '\0';
+
+                    // reset index
                     gsmRecvIndex = 0;
-                    gsmRecvStep = 0;
 
-                    ControllerSave(gsmSender);
-                    UnitUpdate();
-
-                    LATB.RB11 = 0;
+                    // proceed to next step
+                    gsmRecvStep++;
                 }
                 else
                 {
-                    gsmData[gsmRecvIndex++] = input;
+                    gsmSender[gsmRecvIndex++] = input;
                 }
             }
-        }
-        else if (strcmp(gsmCommand, "PLMS-UnitUpdate-CLZ") == 0)
-        {
-            if (gsmRecvStep == 9)
+            else if (input == '"' && gsmRecvStep >= 3 && gsmRecvStep <= 5)
             {
-                if (input == '\r')
+                gsmRecvStep++;
+            }
+            else if (gsmRecvStep == 6)
+            {
+                if (input == '"')
                 {
-                    gsmData[gsmRecvIndex] = '\0';
+                    gsmDatetime[gsmRecvIndex] = '\0';
                     gsmRecvIndex = 0;
-                    gsmRecvStep = 0;
-
-                    if (strcmp(controllerNumber, gsmSender) == 0)
-                        UnitUpdate();
-
-                    LATB.RB11 = 0;
+                    gsmRecvStep++;
                 }
                 else
                 {
-                    gsmData[gsmRecvIndex++] = input;
+                    gsmDatetime[gsmRecvIndex++] = input;
+                }
+            }
+            else if (input == '\n' && gsmRecvStep == 7)
+            {
+                gsmRecvStep++;
+            }
+            else if (gsmRecvStep == 8)
+            {
+                if (input == '\n')
+                {
+                    gsmCommand[gsmRecvIndex] = '\0';
+                    gsmRecvIndex = 0;
+                    gsmRecvStep++;
+                }
+                else
+                {
+                    gsmCommand[gsmRecvIndex++] = input;
+                }
+            }
+            else if (gsmRecvStep >= 9)
+            {
+                if (strcmp(gsmCommand, "PLMS-UnitRegister-CLZ") == 0)
+                {
+                    if (gsmRecvStep == 9)
+                    {
+                        if (input == '\r')
+                        {
+                            gsmData[gsmRecvIndex] = '\0';
+                            gsmRecvIndex = 0;
+                            gsmRecvStep = 0;
+                            gsmRecvType = 0;
+
+                            ControllerSave();
+                            UnitUpdate();
+
+                            LATB.RB11 = 0;
+                        }
+                        else
+                        {
+                            gsmData[gsmRecvIndex++] = input;
+                        }
+                    }
+                }
+                else if (strcmp(gsmCommand, "PLMS-UnitUpdate-CLZ") == 0)
+                {
+                    if (gsmRecvStep == 9)
+                    {
+                        if (input == '\r')
+                        {
+                            gsmData[gsmRecvIndex] = '\0';
+                            gsmRecvIndex = 0;
+                            gsmRecvStep = 0;
+                            gsmRecvType = 0;
+
+                            if (strcmp(controllerNumber, gsmSender) == 0)
+                                UnitUpdate();
+
+                            LATB.RB11 = 0;
+                        }
+                        else
+                        {
+                            gsmData[gsmRecvIndex++] = input;
+                        }
+                    }
+                }
+                else
+                {
+                    gsmRecvStep = 0;
+                    gsmRecvType = 0;
+                    LATB.RB11 = 0;
                 }
             }
         }
-        else
+        else if (gsmRecvType == 2)
         {
-            gsmRecvStep = 0;
-            LATB.RB11 = 0;
+            // CMGS Result Region
+
+            if (input == '\r' && (gsmRecvStep == 1 || gsmRecvStep == 3))
+            {
+                gsmRecvStep++;
+            }
+            else if (input == '\n' && (gsmRecvStep == 2 || gsmRecvStep == 4))
+            {
+                gsmRecvStep++;
+            }
+            else if (input == 'O' && gsmRecvStep == 5)
+            {
+                gsmRecvStep++;
+            }
+            else if (input == 'K' && gsmRecvStep == 6)
+            {
+                gsmRecvStep = 0;
+                gsmRecvType = 0;
+
+                LATB.RB11 = 0;
+                LATB.RB10 = 0;
+
+                UART2_Write_Text("Message Sent\n");
+            }
         }
     }
 }
 
 void gpsReceive(int input)
 {
-    if (input < 0) return;
+    if (input < 0)
+        return;
 
     if (input == '$')
     {

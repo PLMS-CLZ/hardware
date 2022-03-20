@@ -35,7 +35,6 @@ main
 		FLASH_Read_Compact
 	UART1_Data_Ready
 	gsmReceive
-		UART2_Write
 		strcmp
 		ControllerSave
 			strcpy
@@ -49,5 +48,7 @@ main
 			strlen
 			UART2_Write_Text
 			UART1_Write_Text
+			UART1_Read_Text
 			UART1_Write
+		UART2_Write_Text
 	UART1_Read

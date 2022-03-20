@@ -6,6 +6,7 @@ int gpsReceived = 0;
 char gpsData[100];
 
 int gsmStxStatus = 0;
+int gsmRecvType = 0;
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
 char gsmSender[50];
@@ -17,15 +18,15 @@ char controllerNumber[20];
 
 int status = 0;
 
-void ControllerSave(char *controller)
+void ControllerSave()
 {
  LATB.RB12 = 0;
 
- strcpy(controllerNumber, controller);
+ strcpy(controllerNumber, gsmSender);
 
  FLASH_Erase(0x4400);
  Delay_ms(100);
- FLASH_Write_Compact(0x4480, controller);
+ FLASH_Write_Compact(0x4480, gsmSender);
 
  LATB.RB12 = 1;
 
@@ -54,6 +55,7 @@ void ControllerInit()
 
 void UnitUpdate()
 {
+ int i;
  char *_status;
 
 
@@ -70,11 +72,10 @@ void UnitUpdate()
 
  UART1_Write_Text("\r\nAT+CMGS=\"");
  Delay_ms(100);
-
  UART1_Write_Text(controllerNumber);
  Delay_ms(100);
  UART1_Write_Text("\"\r");
- Delay_ms(100);
+ UART1_Read_Text(gsmData, ">", 255);
 
  UART1_Write_Text("PLMS-UnitUpdate-CLZ\n");
  Delay_ms(100);
@@ -82,16 +83,23 @@ void UnitUpdate()
  Delay_ms(100);
  UART1_Write_Text("\n$GPRMC,");
  Delay_ms(100);
- UART1_Write_Text(gpsData);
- Delay_ms(100);
+ for (i = 0; i < 100; i++)
+ {
+ if (gpsData[i] == '\0')
+ break;
+
+ UART1_Write(gpsData[i]);
+ Delay_ms(20);
+ }
  UART1_Write('\x1A');
 
  LATB.RB10 = 1;
 }
 
-void gsmReceive(char input)
+void gsmReceive(int input)
 {
- UART2_Write(input);
+ if (input < 0)
+ return;
 
  if (input == '+')
  {
@@ -105,11 +113,25 @@ void gsmReceive(char input)
  {
  gsmStxStatus++;
  }
- else if (gsmStxStatus == 3 && input == 'T')
+ else if (gsmStxStatus == 3 && (input == 'T' || input == 'G'))
+ {
+ if (input == 'T')
+ {
+ gsmRecvType = 1;
+ }
+ else if (input == 'G')
+ {
+ gsmRecvType = 2;
+ }
+
+ gsmRecvStep = 0;
+ gsmStxStatus++;
+ }
+ else if (gsmStxStatus == 4 && ((gsmRecvType == 1 && input == ':') || (gsmRecvType == 2 && input == 'S')))
  {
  gsmStxStatus++;
  }
- else if (gsmStxStatus == 4 && input == ':')
+ else if (gsmStxStatus == 5 && gsmRecvType == 2 && input == ':')
  {
  gsmStxStatus++;
  }
@@ -118,7 +140,7 @@ void gsmReceive(char input)
  gsmStxStatus = 0;
  }
 
- if (gsmStxStatus == 5)
+ if ((gsmStxStatus == 5 && gsmRecvType == 1) || (gsmStxStatus == 6 && gsmRecvType == 2))
  {
 
  gsmStxStatus = 0;
@@ -131,7 +153,13 @@ void gsmReceive(char input)
 
  LATB.RB11 = 1;
  }
- else if (input == '"' && gsmRecvStep == 1)
+ else if (gsmRecvStep >= 1)
+ {
+ if (gsmRecvType == 1)
+ {
+
+
+ if (input == '"' && gsmRecvStep == 1)
  {
  gsmRecvStep++;
  }
@@ -198,8 +226,9 @@ void gsmReceive(char input)
  gsmData[gsmRecvIndex] = '\0';
  gsmRecvIndex = 0;
  gsmRecvStep = 0;
+ gsmRecvType = 0;
 
- ControllerSave(gsmSender);
+ ControllerSave();
  UnitUpdate();
 
  LATB.RB11 = 0;
@@ -219,6 +248,7 @@ void gsmReceive(char input)
  gsmData[gsmRecvIndex] = '\0';
  gsmRecvIndex = 0;
  gsmRecvStep = 0;
+ gsmRecvType = 0;
 
  if (strcmp(controllerNumber, gsmSender) == 0)
  UnitUpdate();
@@ -234,16 +264,49 @@ void gsmReceive(char input)
  else
  {
  gsmRecvStep = 0;
+ gsmRecvType = 0;
  LATB.RB11 = 0;
+ }
+ }
+ }
+ else if (gsmRecvType == 2)
+ {
+
+
+ if (input == '\r' && (gsmRecvStep == 1 || gsmRecvStep == 3))
+ {
+ gsmRecvStep++;
+ }
+ else if (input == '\n' && (gsmRecvStep == 2 || gsmRecvStep == 4))
+ {
+ gsmRecvStep++;
+ }
+ else if (input == 'O' && gsmRecvStep == 5)
+ {
+ gsmRecvStep++;
+ }
+ else if (input == 'K' && gsmRecvStep == 6)
+ {
+ gsmRecvStep = 0;
+ gsmRecvType = 0;
+
+ LATB.RB11 = 0;
+ LATB.RB10 = 0;
+
+ UART2_Write_Text("Message Sent\n");
+ }
  }
  }
 }
 
-void gpsReceive(char input)
+void gpsReceive(int input)
 {
- if (gpsStxStatus == 0 && input == '$')
+ if (input < 0)
+ return;
+
+ if (input == '$')
  {
- gpsStxStatus++;
+ gpsStxStatus = 1;
  }
  else if (gpsStxStatus == 1 && input == 'G')
  {
@@ -291,7 +354,7 @@ void gpsReceive(char input)
  {
  gpsData[gpsRecvIndex++] = '\0';
 
- if (gpsRecvIndex > 60)
+ if (gpsRecvIndex > 55)
  gpsReceived = 1;
 
  gpsRecvIndex = 0;
@@ -358,7 +421,6 @@ void main()
 
  UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
  UART2_Write_Text("\r\nPIC UART2 Ready!\r\n");
- Delay_ms(100);
 
 
  getGPS();
@@ -367,24 +429,19 @@ void main()
  UART2_Write_Text("GPS: ");
  UART2_Write_Text(gpsData);
  UART2_Write('\n');
- Delay_ms(100);
 
 
  UART1_Write_Text("ATE0\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
- Delay_ms(100);
  UART1_Write_Text("AT+CMGD=1,4\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
- Delay_ms(100);
  UART1_Write_Text("AT+CNMI=3,2,0,1,1\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
- Delay_ms(100);
  UART1_Write_Text("AT+CMGF=1\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
 
  LATB.RB13 = 1;
  UART2_Write_Text("GSM Configured\n");
- Delay_ms(100);
 
 
  ControllerInit();
@@ -392,7 +449,6 @@ void main()
  UART2_Write_Text("Controller: ");
  UART2_Write_Text(controllerNumber);
  UART2_Write('\n');
- Delay_ms(100);
 
  while (1)
  {
