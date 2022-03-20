@@ -88,8 +88,10 @@ void UnitUpdate()
     LATB.RB10 = 1;
 }
 
-void gsmReceive(char input)
+void gsmReceive(int input)
 {
+    if (input < 0) return;
+
     UART2_Write(input);
 
     if (input == '+')
@@ -238,11 +240,13 @@ void gsmReceive(char input)
     }
 }
 
-void gpsReceive(char input)
+void gpsReceive(int input)
 {
-    if (gpsStxStatus == 0 && input == '$')
+    if (input < 0) return;
+
+    if (input == '$')
     {
-        gpsStxStatus++;
+        gpsStxStatus = 1;
     }
     else if (gpsStxStatus == 1 && input == 'G')
     {
