@@ -17,7 +17,7 @@ char gsmData[500];
 
 char controllerNumber[20];
 
-int vStatus = 0;
+int vStatus = -1;
 int vSamples = 0;
 int minSample, maxSample;
 
@@ -226,7 +226,7 @@ void senseVoltage()
 
  voltage *= 1.157894;
 
- if (vStatus == 0 && voltage > 200)
+ if (vStatus != 1 && voltage > 200)
  {
  vStatus = 1;
 
@@ -234,7 +234,7 @@ void senseVoltage()
 
  updateUnit();
  }
- else if (vStatus == 1 && voltage < 100)
+ else if (vStatus != 0 && voltage < 100)
  {
  vStatus = 0;
 
