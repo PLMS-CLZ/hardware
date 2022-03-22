@@ -40,7 +40,25 @@ void UnitRegister()
 void UnitUpdate()
 {
     // Command
-    UART2_Write_Text("\r\nSTX\nUnitUpdate\n");
+    UART1_Write_Text("\r\nAT+CMGS=\"");
+    Delay_ms(100);
+    // Receiver
+    UART1_Write_Text(espData);
+    Delay_ms(100);
+    UART1_Write_Text("\"\r");
+    Delay_ms(100);
+    // Data
+    UART1_Write_Text("PLMS-UnitUpdate-CLZ\n");
+    Delay_ms(100);
+    UART1_Write_Text("-========CLZ========-");
+    Delay_ms(100);
+    UART1_Write('\x1A');
+}
+
+void UpdateUnit()
+{
+    // Command
+    UART2_Write_Text("\r\nSTX\nUpdateUnit\n");
     Delay_ms(100);
     // Data
     UART2_Write_Text(gsmData);
@@ -284,7 +302,7 @@ void gsmReceive(char input)
                         }
                     }
                 }
-                else if (strcmp(gsmCommand, "PLMS-UnitUpdate-CLZ") == 0)
+                else if (strcmp(gsmCommand, "PLMS-UpdateUnit-CLZ") == 0)
                 {
                     LATB.RB13 = 1;
 
@@ -299,7 +317,7 @@ void gsmReceive(char input)
 
                             LATB.RB12 = 1;
 
-                            UnitUpdate();
+                            UpdateUnit();
 
                             LATB.RB15 = 0;
                             LATB.RB14 = 0;
@@ -438,6 +456,33 @@ void espReceive(char input)
 
                     UnitRegister();
 
+                    LATB.RB13 = 0;
+                    LATB.RB12 = 0;
+                }
+                else
+                {
+                    espData[espRecvIndex++] = input;
+                }
+            }
+        }
+        else if (strcmp(espCommand, "UnitUpdate") == 0)
+        {
+            LATB.RB13 = 1;
+
+            if (espRecvStep == 2)
+            {
+                if (input == '\0')
+                {
+                    espData[espRecvIndex] = '\0';
+                    espRecvIndex = 0;
+                    espRecvStep = 0;
+
+                    LATB.RB12 = 1;
+
+                    UnitUpdate();
+
+                    LATB.RB15 = 0;
+                    LATB.RB14 = 0;
                     LATB.RB13 = 0;
                     LATB.RB12 = 0;
                 }

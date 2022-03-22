@@ -5968,6 +5968,7 @@ unitupdate
 unlock_iolock
 unused
 unused
+updateunit
 urx0
 urx0_bit
 urx0_u1rxreg_bit

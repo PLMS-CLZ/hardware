@@ -42,7 +42,7 @@ main
 			FLASH_Write_Compact
 				FLASH_Write_DoWrite
 			UART2_Write_Text
-		UnitUpdate
+		UpdateUnit
 			UART2_Write_Text
 			UART2_Write
 		MessageSent
@@ -56,6 +56,9 @@ main
 			UART2_Write_Text
 			UART2_Write
 		UnitRegister
+			UART1_Write_Text
+			UART1_Write
+		UnitUpdate
 			UART1_Write_Text
 			UART1_Write
 		apiLogin
