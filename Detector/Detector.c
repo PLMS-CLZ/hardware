@@ -170,7 +170,7 @@ void updateUnit()
     UART1_Write_Text("\"\r");
     UART1_Read_Text(gsmData, ">", 255);
     // Data
-    UART1_Write_Text("PLMS-UnitUpdate-CLZ\n");
+    UART1_Write_Text("PLMS-UpdateUnit-CLZ\n");
     Delay_ms(100);
     UART1_Write_Text(_status);
     Delay_ms(100);
