@@ -8,6 +8,7 @@ int gsmStxStatus = 0;
 int gsmRecvType = 0; // Type 1 = Text Received; Type 2 = Text Result
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
+int gsmSending = 0;
 char gsmSender[50];
 char gsmDatetime[25];
 char gsmCommand[500];
@@ -15,7 +16,103 @@ char gsmData[500];
 
 char controllerNumber[20];
 
-int status = 0;
+int vStatus = 0;
+int vSamples = 0;
+int minSample, maxSample;
+
+void controllerInit();
+void controllerSave();
+void getGPS();
+void gpsReceive(int input);
+void gsmReceive(int input);
+void senseVoltage();
+void updateUnit();
+
+void main()
+{
+    // Configure Peripherals
+    Unlock_IOLOCK();
+    PPS_Mapping_NoLock(9, _INPUT, _U2RX);  // GPS RX
+    PPS_Mapping_NoLock(5, _OUTPUT, _U2TX); // Debug TX
+    PPS_Mapping_NoLock(7, _INPUT, _U1RX);  // GSM RX
+    PPS_Mapping_NoLock(6, _OUTPUT, _U1TX); // GSM TX
+    Lock_IOLOCK();
+
+    // Configure Ports
+    TRISB.RB0 = 1; // ADC
+    TRISB.RB15 = 0;
+    TRISB.RB14 = 0;
+    TRISB.RB13 = 0;
+    TRISB.RB12 = 0;
+    TRISB.RB11 = 0;
+    TRISB.RB10 = 0;
+    TRISB.RB8 = 0; // GPS Enable
+
+    // Initialize ADC
+    ADC1_Init();
+
+    // Initialize UART
+    UART1_Init(9600); // GPS
+    UART2_Init(9600); // GSM
+
+    // LED Test
+    LATB.RB15 = 1;
+    LATB.RB14 = 1;
+    LATB.RB13 = 1;
+    LATB.RB12 = 1;
+    LATB.RB11 = 1;
+    LATB.RB10 = 1;
+    Delay_ms(5000);
+    LATB.RB14 = 0;
+    LATB.RB13 = 0;
+    LATB.RB12 = 0;
+    LATB.RB11 = 0;
+    LATB.RB10 = 0;
+
+    // UART
+    UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
+    UART2_Write_Text("\r\nPIC UART2 Ready!\r\n");
+
+    // GPS
+    getGPS();
+
+    LATB.RB14 = 1;
+    UART2_Write_Text("GPS: ");
+    UART2_Write_Text(gpsData);
+    UART2_Write('\n');
+
+    // GSM
+    UART1_Write_Text("ATE0\r\n");
+    UART1_Read_Text(gsmCommand, "OK", 255);
+    UART1_Write_Text("AT+CMGD=1,4\r\n");
+    UART1_Read_Text(gsmCommand, "OK", 255);
+    UART1_Write_Text("AT+CNMI=3,2,0,1,1\r\n");
+    UART1_Read_Text(gsmCommand, "OK", 255);
+    UART1_Write_Text("AT+CMGF=1\r\n");
+    UART1_Read_Text(gsmCommand, "OK", 255);
+
+    LATB.RB13 = 1;
+    UART2_Write_Text("GSM Configured\n");
+
+    // Controller
+    controllerInit();
+
+    UART2_Write_Text("Controller: ");
+    UART2_Write_Text(controllerNumber);
+    UART2_Write('\n');
+
+    while (1)
+    {
+        if (UART1_Data_Ready())
+        {
+            gsmReceive(UART1_Read());
+        }
+        else if (gsmRecvStep == 0 && gsmStxStatus == 0 && gsmSending == 0)
+        {
+            senseVoltage();
+        }
+    }
+}
 
 void ControllerSave()
 {
@@ -52,21 +149,18 @@ void ControllerInit()
     LATB.RB12 = 1;
 }
 
-void UnitUpdate()
+void updateUnit()
 {
     int i;
     char *_status;
 
     // Check
-    if (strlen(controllerNumber) == 0)
-    {
+    if (controllerNumber[0] != '+')
         return;
-    }
 
-    UART2_Write_Text("Sending Message\n");
+    getGPS();
 
-    // Process
-    _status = (status == 0) ? "fault" : "normal";
+    _status = (vStatus == 0) ? "fault" : "normal";
 
     // Command
     UART1_Write_Text("\r\nAT+CMGS=\"");
@@ -93,6 +187,150 @@ void UnitUpdate()
     UART1_Write('\x1A');
 
     LATB.RB10 = 1;
+    gsmSending = 1;
+
+    UART2_Write_Text("Sending Message\n");
+}
+
+void senseVoltage()
+{
+    float voltage;
+    int curSample = ADC1_Get_Sample(2);
+
+    if (vSamples == 0)
+    {
+        // Set initial
+        maxSample = minSample = curSample;
+    }
+    else if (vSamples < 50)
+    {
+        if (curSample > maxSample)
+            maxSample = curSample;
+        if (curSample < minSample)
+            minSample = curSample;
+    }
+
+    if (vSamples == 50)
+    {
+        // Reset
+        vSamples = 0;
+
+        // 0 - 512 range
+        minSample = 512 - minSample;
+        maxSample = maxSample - 512;
+
+        // Get average
+        voltage = (maxSample + minSample) / 2.0;
+
+        // Apply factor
+        voltage *= 1.157894;
+
+        if (vStatus == 0 && voltage > 200)
+        {
+            vStatus = 1;
+
+            UART2_Write_Text("Power Restored\n");
+
+            updateUnit();
+        }
+        else if (vStatus == 1 && voltage < 100)
+        {
+            vStatus = 0;
+
+            UART2_Write_Text("Outage Detected\n");
+
+            updateUnit();
+        }
+    }
+    else
+    {
+        vSamples++;
+    }
+}
+
+void getGPS()
+{
+    gpsReceived = 0;
+    LATB.RB8 = 1;
+
+    UART2_Write_Text("Getting Location\n");
+
+    do
+    {
+        if (UART2_Data_Ready())
+        {
+            gpsReceive(UART2_Read());
+        }
+    } while (gpsReceived == 0);
+    LATB.RB8 = 0;
+}
+
+void gpsReceive(int input)
+{
+    if (input < 0)
+        return;
+
+    if (input == '$')
+    {
+        gpsStxStatus = 1;
+    }
+    else if (gpsStxStatus == 1 && input == 'G')
+    {
+        gpsStxStatus++;
+    }
+    else if (gpsStxStatus == 2 && input == 'P')
+    {
+        gpsStxStatus++;
+    }
+    else if (gpsStxStatus == 3 && input == 'R')
+    {
+        gpsStxStatus++;
+    }
+    else if (gpsStxStatus == 4 && input == 'M')
+    {
+        gpsStxStatus++;
+    }
+    else if (gpsStxStatus == 5 && input == 'C')
+    {
+        gpsStxStatus++;
+    }
+    else if (gpsStxStatus == 6 && input == ',')
+    {
+        gpsStxStatus++;
+    }
+    else
+    {
+        gpsStxStatus = 0;
+    }
+
+    if (gpsStxStatus == 7)
+    {
+        // reset stx status
+        gpsStxStatus = 0;
+
+        // reset index
+        gpsRecvIndex = 0;
+
+        // proceed to step 1
+        gpsRecvStep = 1;
+    }
+    else if (gpsRecvStep == 1)
+    {
+        if (input == '\r')
+        {
+            gpsData[gpsRecvIndex++] = '\0';
+
+            if (gpsRecvIndex > 55)
+                gpsReceived = 1;
+
+            gpsRecvIndex = 0;
+            gpsRecvStep = 0;
+        }
+        else
+        {
+            gpsData[gpsRecvIndex++] = input;
+        }
+    }
 }
 
 void gsmReceive(int input)
@@ -227,8 +465,8 @@ void gsmReceive(int input)
                             gsmRecvStep = 0;
                             gsmRecvType = 0;
 
-                            ControllerSave();
-                            UnitUpdate();
+                            controllerSave();
+                            updateUnit();
 
                             LATB.RB11 = 0;
                         }
@@ -250,7 +488,7 @@ void gsmReceive(int input)
                             gsmRecvType = 0;
 
                             if (strcmp(controllerNumber, gsmSender) == 0)
-                                UnitUpdate();
+                                updateUnit();
 
                             LATB.RB11 = 0;
                         }
@@ -271,6 +509,8 @@ void gsmReceive(int input)
         else if (gsmRecvType == 2)
         {
             // CMGS Result Region
+
+            gsmSending = 0;
 
             if (input == '\r' && (gsmRecvStep == 1 || gsmRecvStep == 3))
             {
@@ -294,166 +534,6 @@ void gsmReceive(int input)
 
                 UART2_Write_Text("Message Sent\n");
             }
-        }
-    }
-}
-
-void gpsReceive(int input)
-{
-    if (input < 0)
-        return;
-
-    if (input == '$')
-    {
-        gpsStxStatus = 1;
-    }
-    else if (gpsStxStatus == 1 && input == 'G')
-    {
-        gpsStxStatus++;
-    }
-    else if (gpsStxStatus == 2 && input == 'P')
-    {
-        gpsStxStatus++;
-    }
-    else if (gpsStxStatus == 3 && input == 'R')
-    {
-        gpsStxStatus++;
-    }
-    else if (gpsStxStatus == 4 && input == 'M')
-    {
-        gpsStxStatus++;
-    }
-    else if (gpsStxStatus == 5 && input == 'C')
-    {
-        gpsStxStatus++;
-    }
-    else if (gpsStxStatus == 6 && input == ',')
-    {
-        gpsStxStatus++;
-    }
-    else
-    {
-        gpsStxStatus = 0;
-    }
-
-    if (gpsStxStatus == 7)
-    {
-        // reset stx status
-        gpsStxStatus = 0;
-
-        // reset index
-        gpsRecvIndex = 0;
-
-        // proceed to step 1
-        gpsRecvStep = 1;
-    }
-    else if (gpsRecvStep == 1)
-    {
-        if (input == '\r')
-        {
-            gpsData[gpsRecvIndex++] = '\0';
-
-            if (gpsRecvIndex > 55)
-                gpsReceived = 1;
-
-            gpsRecvIndex = 0;
-            gpsRecvStep = 0;
-        }
-        else
-        {
-            gpsData[gpsRecvIndex++] = input;
-        }
-    }
-}
-
-void getGPS()
-{
-    gpsReceived = 0;
-    LATB.RB8 = 1;
-    do
-    {
-        if (UART2_Data_Ready())
-        {
-            gpsReceive(UART2_Read());
-        }
-    } while (gpsReceived == 0);
-    LATB.RB8 = 0;
-}
-
-void main()
-{
-    // Configure Peripherals
-    Unlock_IOLOCK();
-    PPS_Mapping_NoLock(9, _INPUT, _U2RX);  // GPS RX
-    PPS_Mapping_NoLock(5, _OUTPUT, _U2TX); // Debug TX
-    PPS_Mapping_NoLock(7, _INPUT, _U1RX);  // GSM RX
-    PPS_Mapping_NoLock(6, _OUTPUT, _U1TX); // GSM TX
-    Lock_IOLOCK();
-
-    // Configure Ports
-    TRISB.RB15 = 0;
-    TRISB.RB14 = 0;
-    TRISB.RB13 = 0;
-    TRISB.RB12 = 0;
-    TRISB.RB11 = 0;
-    TRISB.RB10 = 0;
-    TRISB.RB8 = 0; // GPS Enable
-
-    // Configure UART
-    UART1_Init(9600); // GPS
-    UART2_Init(9600); // GSM
-
-    // LED
-    LATB.RB15 = 1;
-    LATB.RB14 = 1;
-    LATB.RB13 = 1;
-    LATB.RB12 = 1;
-    LATB.RB11 = 1;
-    LATB.RB10 = 1;
-    Delay_ms(5000);
-    LATB.RB14 = 0;
-    LATB.RB13 = 0;
-    LATB.RB12 = 0;
-    LATB.RB11 = 0;
-    LATB.RB10 = 0;
-
-    // UART
-    UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
-    UART2_Write_Text("\r\nPIC UART2 Ready!\r\n");
-
-    // GPS
-    getGPS();
-
-    LATB.RB14 = 1;
-    UART2_Write_Text("GPS: ");
-    UART2_Write_Text(gpsData);
-    UART2_Write('\n');
-
-    // GSM
-    UART1_Write_Text("ATE0\r\n");
-    UART1_Read_Text(gsmCommand, "OK", 255);
-    UART1_Write_Text("AT+CMGD=1,4\r\n");
-    UART1_Read_Text(gsmCommand, "OK", 255);
-    UART1_Write_Text("AT+CNMI=3,2,0,1,1\r\n");
-    UART1_Read_Text(gsmCommand, "OK", 255);
-    UART1_Write_Text("AT+CMGF=1\r\n");
-    UART1_Read_Text(gsmCommand, "OK", 255);
-
-    LATB.RB13 = 1;
-    UART2_Write_Text("GSM Configured\n");
-
-    // Controller
-    ControllerInit();
-
-    UART2_Write_Text("Controller: ");
-    UART2_Write_Text(controllerNumber);
-    UART2_Write('\n');
-
-    while (1)
-    {
-        if (UART1_Data_Ready())
-        {
-            gsmReceive(UART1_Read());
         }
     }
 }

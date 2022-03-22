@@ -5,6 +5,7 @@ main
 			Unlock_IOLOCK
 			Lock_IOLOCK
 	Lock_IOLOCK
+	ADC1_Init
 	UART1_Init
 		Get_Fosc_kHz
 		Get_Fosc_Per_Cyc
@@ -24,6 +25,7 @@ main
 	UART2_Write_Text
 		UART2_Write
 	getGPS
+		UART2_Write_Text
 		UART2_Data_Ready
 		gpsReceive
 		UART2_Read
@@ -44,11 +46,22 @@ main
 			FLASH_Write_Compact
 				FLASH_Write_DoWrite
 			UART2_Write_Text
-		UnitUpdate
-			strlen
-			UART2_Write_Text
+		updateUnit
+			getGPS
 			UART1_Write_Text
 			UART1_Read_Text
 			UART1_Write
+			UART2_Write_Text
 		UART2_Write_Text
 	UART1_Read
+	senseVoltage
+		ADC1_Get_Sample
+		UART2_Write_Text
+		updateUnit
+		_Long2Float
+		_Div_FP
+		_Mul_FP
+		_Compare_Ge_Fp
+			_Compare_Fp
+		_Compare_Le_Fp
+			_Compare_Fp

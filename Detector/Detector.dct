@@ -17,6 +17,12 @@ __lib_system_defaultpage
 __subfromfarpointer
 __xram_ram_size
 __xram_ram_start
+_adc_external_ref
+_adc_external_vrefh
+_adc_external_vrefl
+_adc_internal_ref
+_adc_internal_vrefh
+_adc_internal_vrefl
 _addsub_fp
 _c1out
 _c2out
@@ -142,6 +148,11 @@ ad1ip1
 ad1ip2
 ad1pcfg
 ad1pcfgbits
+adc_get_sample_ptr
+adc1_get_sample
+adc1_init
+adc1_init_advanced
+adc1_read
 adc1buf0
 adc1buf0_0
 adc1buf0_0_adc1buf0_bit
@@ -1729,6 +1740,7 @@ gsmrecvindex
 gsmrecvstep
 gsmrecvtype
 gsmsender
+gsmsending
 gsmstxstatus
 halfsec
 halfsec
@@ -2869,6 +2881,7 @@ matherr
 matherr
 matherr_bit
 max
+maxsample
 memchr
 memcmp
 memcpy
@@ -2915,6 +2928,7 @@ mi2c2p0
 mi2c2p1
 mi2c2p2
 min
+minsample
 mode
 mode_0
 mode_0_bit
@@ -4689,6 +4703,7 @@ sen
 sen_bit
 sen_i2c1con_bit
 sen_i2c2con_bit
+sensevoltage
 shorttohex
 shorttostr
 shorttostrwithzeros
@@ -5145,7 +5160,6 @@ ssrc_2_bit
 ssrc0
 ssrc1
 ssrc2
-status
 stkerr
 stkerr
 stkerr_bit
@@ -6010,10 +6024,10 @@ uen0
 uen1
 uen1
 uldiv
-unitupdate
 unlock_iolock
 unused
 unused
+updateunit
 urx0
 urx0_bit
 urx0_u1rxreg_bit
@@ -6179,6 +6193,8 @@ vdelay_ms
 vregs
 vregs
 vregs_bit
+vsamples
+vstatus
 vword
 vword_0
 vword_0_bit
