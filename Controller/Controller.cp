@@ -480,12 +480,15 @@ void espReceive(char input)
 
  LATB.RB12 = 1;
 
- UnitUpdate();
-
  LATB.RB15 = 0;
  LATB.RB14 = 0;
+
+ ControllerConnected();
+
  LATB.RB13 = 0;
  LATB.RB12 = 0;
+
+ UnitUpdate();
  }
  else
  {
