@@ -187,7 +187,6 @@ void updateUnit()
  }
  UART1_Write('\x1A');
 
- LATB.RB10 = 1;
  gsmSending = 1;
 
  UART2_Write_Text("Sending Message\n");
@@ -232,6 +231,8 @@ void senseVoltage()
 
  UART2_Write_Text("Power Restored\n");
 
+ LATB.RB10 = 1;
+
  updateUnit();
  }
  else if (vStatus != 0 && voltage < 100)
@@ -239,6 +240,8 @@ void senseVoltage()
  vStatus = 0;
 
  UART2_Write_Text("Outage Detected\n");
+
+ LATB.RB10 = 0;
 
  updateUnit();
  }
@@ -531,7 +534,6 @@ void gsmReceive(int input)
  gsmRecvType = 0;
 
  LATB.RB11 = 0;
- LATB.RB10 = 0;
 
  UART2_Write_Text("Message Sent\n");
  }
