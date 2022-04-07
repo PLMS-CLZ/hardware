@@ -352,7 +352,7 @@ void picReceive(char input)
                 }
             }
         }
-        else if (strcmp(picCommand, "UnitUpdate") == 0)
+        else if (strcmp(picCommand, "UpdateUnit") == 0)
         {
             if (picRecvStep == 2)
             {
