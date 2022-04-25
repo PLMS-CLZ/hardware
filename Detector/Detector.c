@@ -2,17 +2,17 @@ int gpsStxStatus = 0;
 int gpsRecvIndex = 0;
 int gpsRecvStep = 0;
 int gpsReceived = 0;
-char gpsData[100];
+char gpsData[1000];
 
 int gsmStxStatus = 0;
 int gsmRecvType = 0; // Type 1 = Text Received; Type 2 = Text Result
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
 int gsmSending = 0;
-char gsmSender[50];
-char gsmDatetime[25];
-char gsmCommand[500];
-char gsmData[500];
+char gsmSender[1000];
+char gsmDatetime[1000];
+char gsmCommand[1000];
+char gsmData[1000];
 
 char controllerNumber[20];
 
