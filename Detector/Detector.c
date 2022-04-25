@@ -68,6 +68,9 @@ void main()
     LATB.RB12 = 0;
     LATB.RB11 = 0;
     LATB.RB10 = 0;
+    
+    // Clear WDT
+    asm CLRWDT;
 
     // UART
     UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
@@ -91,6 +94,8 @@ void main()
     UART1_Write_Text("AT+CMGF=1\r\n");
     UART1_Read_Text(gsmCommand, "OK", 255);
 
+    asm CLRWDT;
+
     LATB.RB13 = 1;
     UART2_Write_Text("GSM Configured\n");
 
@@ -111,6 +116,8 @@ void main()
         {
             senseVoltage();
         }
+        
+        asm CLRWDT;
     }
 }
 
@@ -263,6 +270,7 @@ void getGPS()
         if (UART2_Data_Ready())
         {
             gpsReceive(UART2_Read());
+            asm CLRWDT;
         }
     } while (gpsReceived == 0);
     LATB.RB8 = 0;

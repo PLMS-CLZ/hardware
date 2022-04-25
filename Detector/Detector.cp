@@ -3,17 +3,17 @@ int gpsStxStatus = 0;
 int gpsRecvIndex = 0;
 int gpsRecvStep = 0;
 int gpsReceived = 0;
-char gpsData[100];
+char gpsData[1000];
 
 int gsmStxStatus = 0;
 int gsmRecvType = 0;
 int gsmRecvIndex = 0;
 int gsmRecvStep = 0;
 int gsmSending = 0;
-char gsmSender[50];
-char gsmDatetime[25];
-char gsmCommand[500];
-char gsmData[500];
+char gsmSender[1000];
+char gsmDatetime[1000];
+char gsmCommand[1000];
+char gsmData[1000];
 
 char controllerNumber[20];
 
@@ -71,6 +71,9 @@ void main()
  LATB.RB10 = 0;
 
 
+ asm CLRWDT;
+
+
  UART1_Write_Text("\r\nPIC UART1 Ready!\r\n");
  UART2_Write_Text("\r\nPIC UART2 Ready!\r\n");
 
@@ -92,6 +95,8 @@ void main()
  UART1_Write_Text("AT+CMGF=1\r\n");
  UART1_Read_Text(gsmCommand, "OK", 255);
 
+ asm CLRWDT;
+
  LATB.RB13 = 1;
  UART2_Write_Text("GSM Configured\n");
 
@@ -112,6 +117,8 @@ void main()
  {
  senseVoltage();
  }
+
+ asm CLRWDT;
  }
 }
 
@@ -264,6 +271,7 @@ void getGPS()
  if (UART2_Data_Ready())
  {
  gpsReceive(UART2_Read());
+ asm CLRWDT;
  }
  } while (gpsReceived == 0);
  LATB.RB8 = 0;

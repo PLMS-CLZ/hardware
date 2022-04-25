@@ -24,7 +24,8 @@ Count=0
 Count=0
 ActiveImageIndex=-1
 [OPENED_FILES]
-Count=0
+File0=Detector.c
+Count=1
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]
@@ -56,5 +57,5 @@ Count=9
 Count=2
 [LIB_EXPANDED_NODES]
 0=mikroE Libraries
-1=System Libraries
-Count=3
+1902=mikroBUS Board Definition API
+Count=2
